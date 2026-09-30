@@ -1,16 +1,154 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>N by N — Admin</title><link rel="stylesheet" href="assets/admin.css">
+
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>N by N — Admin</title>
+
+<link rel="stylesheet" href="admin.css">
 </head>
+
 <body>
-<div id="login" class="login"><div class="loginBox"><img src="assets/logo.jpg"><span class="eyebrow">N BY N ADMIN</span><h1>لوحة التحكم</h1><p>تسجيل دخول المدير عبر Supabase Auth.</p><input id="email" type="email" placeholder="البريد الإلكتروني"><input id="password" type="password" placeholder="كلمة المرور"><button id="loginBtn" class="primary">دخول</button><p id="loginMsg"></p></div></div>
+
+<div id="login" class="login">
+
+<div class="loginBox">
+
+<img src="logo.jpg">
+
+<span class="eyebrow">N BY N ADMIN</span>
+
+<h1>لوحة التحكم</h1>
+
+<p>تسجيل دخول المدير عبر Supabase Auth.</p>
+
+<input
+id="email"
+type="email"
+placeholder="البريد الإلكتروني"
+>
+
+<input
+id="password"
+type="password"
+placeholder="كلمة المرور"
+>
+
+<button id="loginBtn" class="primary">
+دخول
+</button>
+
+<p id="loginMsg"></p>
+
+</div>
+</div>
+
 
 <div id="app" class="hidden">
-<aside class="side"><div class="sideBrand"><img src="assets/logo.jpg"><b>N by N</b></div>
-<button class="nav active" data-page="dashboard">⌂ <span>الرئيسية</span></button><button class="nav" data-page="products">◈ <span>المنتجات</span></button><button class="nav" data-page="orders">▣ <span>الطلبات</span></button><button class="nav" data-page="customers">♙ <span>العملاء</span></button><button class="nav" data-page="messages">✉ <span>الرسائل</span></button><button class="nav" data-page="inventory">▤ <span>المخزون</span></button><button class="nav" data-page="coupons">% <span>الكوبونات</span></button><button class="nav" data-page="settings">⚙ <span>الإعدادات</span></button>
-<button id="logout" class="logout">تسجيل الخروج</button></aside>
-<main class="main"><header class="dashHead"><div><span class="eyebrow">N BY N MANAGEMENT</span><h1 id="title">لوحة التحكم</h1></div><a href="index.html" class="view">المتجر ↗</a></header><div id="page"></div></main></div>
-<div id="modal" class="modal hidden"><div class="modalBox"><button id="modalClose" class="close">×</button><h2 id="modalTitle"></h2><div id="modalBody"></div></div></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="assets/config.js"></script><script src="assets/admin.js"></script>
-</body></html>
+
+<aside class="side">
+
+<div class="sideBrand">
+
+<img src="logo.jpg">
+
+<b>N by N</b>
+
+</div>
+
+
+<button class="nav active" data-page="dashboard">
+⌂ <span>الرئيسية</span>
+</button>
+
+<button class="nav" data-page="products">
+◈ <span>المنتجات</span>
+</button>
+
+<button class="nav" data-page="orders">
+▣ <span>الطلبات</span>
+</button>
+
+<button class="nav" data-page="customers">
+♙ <span>العملاء</span>
+</button>
+
+<button class="nav" data-page="messages">
+✉ <span>الرسائل</span>
+</button>
+
+<button class="nav" data-page="inventory">
+▤ <span>المخزون</span>
+</button>
+
+<button class="nav" data-page="coupons">
+% <span>الكوبونات</span>
+</button>
+
+<button class="nav" data-page="settings">
+⚙ <span>الإعدادات</span>
+</button>
+
+<button id="logout" class="logout">
+تسجيل الخروج
+</button>
+
+</aside>
+
+
+<main class="main">
+
+<header class="dashHead">
+
+<div>
+
+<span class="eyebrow">
+N BY N MANAGEMENT
+</span>
+
+<h1 id="title">
+لوحة التحكم
+</h1>
+
+</div>
+
+<a href="index.html" class="view">
+المتجر ↗
+</a>
+
+</header>
+
+<div id="page"></div>
+
+</main>
+
+</div>
+
+
+<div id="modal" class="modal hidden">
+
+<div class="modalBox">
+
+<button id="modalClose" class="close">
+×
+</button>
+
+<h2 id="modalTitle"></h2>
+
+<div id="modalBody"></div>
+
+</div>
+
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script src="config.js"></script>
+
+<script src="admin.js"></script>
+
+</body>
+</html>
