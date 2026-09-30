@@ -11,3 +11,4 @@
 .heroImageLink{display:block;width:100%;line-height:0}
 .heroImage{width:100%;height:auto;max-width:none;object-fit:cover;display:block}
 @media(max-width:700px){.heroImage{width:100%;height:auto;min-height:0;object-fit:cover}.heroImageOnly{min-height:0!important}.heroContent,.heroBenefits{display:none!important}}
+.orderCard{border:1px solid #eadfd8;border-radius:14px;padding:14px;margin:10px 0;background:#fff}.orderCard>div{display:flex;justify-content:space-between;gap:10px}.orderCard span{font-size:12px;color:#777}.orderCard p{margin:8px 0 0}.fav{cursor:pointer}.outline.full{width:100%;margin-top:8px}
