@@ -1,130 +1,58 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#250914">
-  <meta name="description" content="N by N — Online Store">
-  <title>N by N — Online Store</title>
-  <link rel="stylesheet" href="./style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#5a0c25">
+<meta name="description" content="N by N — متجر أزياء فاخر للرجال والنساء">
+<title>N by N — Online Store</title>
+<link rel="stylesheet" href="./style.css">
 </head>
 <body>
-
 <header class="header">
-  <a class="brand" href="#home" aria-label="N by N">
-    <img src="./logo.jpg" alt="N by N">
-    <span>N by N</span>
-  </a>
-
-  <nav aria-label="القائمة الرئيسية">
-    <a href="#home">الرئيسية</a>
-    <a href="#shop">المتجر</a>
-    <a href="#about">من نحن</a>
-    <a href="#contact">خدمة العملاء</a>
+  <div class="topbar">
+    <div class="lang"><span>🌐 العربية⌄</span><span class="qatarDot">◐ Qatar</span></div>
+    <a class="brand" href="#home"><img src="./logo.jpg" alt="N by N"><span>N BY N</span></a>
+    <div class="headTools">
+      <label class="search"><input id="searchInput" type="search" placeholder="ابحث عن منتجك المفضل..."><span>⌕</span></label>
+      <button id="accountBtn" type="button">♙ حسابي</button>
+      <button id="cartBtn" type="button">🛒 سلة <b id="cartCount">0</b></button>
+    </div>
+  </div>
+  <nav>
+    <a class="active" href="#home">الرئيسية</a><a href="#shop">المنتجات</a><a href="#shop" data-jump="men">الرجال</a><a href="#shop" data-jump="women">النساء</a><a href="#offers">العروض</a><a href="#about">من نحن</a><a href="#contact">تواصل معنا</a>
   </nav>
-
-  <div class="actions">
-    <button id="accountBtn" type="button">حسابي</button>
-    <button id="cartBtn" type="button" aria-label="السلة">🛒 <b id="cartCount">0</b></button>
-    <a class="admin" href="./admin.html">الإدارة</a>
-  </div>
 </header>
-
 <main>
-  <section id="home" class="hero">
-    <div class="heroCopy">
-      <span class="eyebrow">N BY N • ONLINE STORE</span>
-      <h1>أناقة<br><em>بأسلوبك.</em></h1>
-      <p>تشكيلة مختارة للرجال والنساء مع تجربة تسوق عصرية وفاخرة.</p>
-      <a href="#shop" class="btn">تسوق الآن</a>
-    </div>
-    <img src="./logo.jpg" class="hero-logo" alt="N by N">
-  </section>
-
-  <section class="ticker" aria-label="N by N">
-    <span>N BY N</span>
-    <span>NEW COLLECTION</span>
-    <span>MEN</span>
-    <span>WOMEN</span>
-    <span>PREMIUM</span>
-  </section>
-
-  <section id="shop" class="section">
-    <div class="head">
-      <div>
-        <span class="eyebrow">COLLECTION</span>
-        <h2>التشكيلة</h2>
-      </div>
-      <div class="filters" role="group" aria-label="تصنيف المنتجات">
-        <button class="active" type="button" data-cat="all">الكل</button>
-        <button type="button" data-cat="men">رجال</button>
-        <button type="button" data-cat="women">نساء</button>
-      </div>
-    </div>
-    <div id="products" class="products">
-      <div class="loading">جاري تحميل المنتجات...</div>
-    </div>
-  </section>
-
-  <section id="about" class="about">
-    <div>
-      <span class="eyebrow">N BY N</span>
-      <h2>هوية فاخرة<br>وتجربة بسيطة.</h2>
-    </div>
-    <div>
-      <p>متجر N by N مصمم ليجمع بين الهوية الراقية وسهولة الشراء. يتم التحكم بالمنتجات والطلبات والمخزون والعملاء من لوحة إدارة واحدة.</p>
-    </div>
-  </section>
-
-  <section id="contact" class="section contact">
-    <div>
-      <span class="eyebrow">CUSTOMER SERVICE</span>
-      <h2>خدمة العملاء</h2>
-      <p>للاستفسار أو المساعدة في الطلب، أرسل رسالة مباشرة.</p>
-    </div>
-    <form id="contactForm" novalidate>
-      <input name="name" placeholder="الاسم" autocomplete="name" required>
-      <input name="email" type="email" placeholder="البريد الإلكتروني" autocomplete="email" required>
-      <textarea name="message" placeholder="رسالتك" required></textarea>
-      <button class="btn" type="submit">إرسال</button>
-    </form>
-  </section>
+<section id="home" class="hero">
+  <div class="heroOverlay"></div>
+  <div class="heroContent">
+    <span class="eyebrow">N BY N • ONLINE STORE</span>
+    <h1>أناقتك .. أسلوب حياتك</h1>
+    <p>تشكيلة فاخرة للرجال والنساء، مصممة لتمنحك حضورًا يليق بك.</p>
+    <a class="goldBtn" href="#shop">تسوق الآن 🛍</a>
+  </div>
+  <div class="heroBenefits"><div>🚚<b>توصيل سريع</b><small>لكل أنحاء قطر</small></div><div>🛡<b>دفع آمن</b><small>100%</small></div><div>🎧<b>خدمة عملاء</b><small>24/7</small></div></div>
+</section>
+<section class="categoryBanners">
+  <button class="catBanner" data-cat="men" style="background-image:url('./assets/men.jpg')"><span>الرجال<small>MEN</small><b>تسوق الآن →</b></span></button>
+  <button class="catBanner" data-cat="women" style="background-image:url('./assets/women.jpg')"><span>النساء<small>WOMEN</small><b>تسوق الآن →</b></span></button>
+</section>
+<section class="serviceStrip"><div>☆<b>منتجات أصلية</b><small>جودة مضمونة</small></div><div>↻<b>إرجاع سهل</b><small>خلال 7 أيام</small></div><div>▣<b>دفع عند الاستلام</b><small>متوفر في المناطق</small></div><div>🎁<b>عروض حصرية</b><small>نضيفها دائمًا</small></div><div>♡<b>مفضلاتك</b><small>تجربة شخصية</small></div></section>
+<section id="shop" class="section shopSection">
+  <div class="sectionHead"><div><span class="eyebrow">N BY N COLLECTION</span><h2>أحدث المنتجات</h2></div><a href="#shop" id="showAll">عرض الكل ←</a></div>
+  <div class="filters"><button class="active" data-cat="all">الكل</button><button data-cat="men">الرجال</button><button data-cat="women">النساء</button><button data-cat="offers">العروض</button></div>
+  <div id="products" class="products"><div class="loading">جاري تحميل المنتجات...</div></div>
+</section>
+<section id="offers" class="offerBand"><div><span>LIMITED OFFER</span><h2>خصومات تصل إلى 30%</h2><p>اكتشف القطع المختارة قبل انتهاء العرض.</p></div><a class="goldBtn" href="#shop">اكتشف العروض</a></section>
+<section id="about" class="about section"><div><span class="eyebrow">N BY N</span><h2>الفخامة<br>في كل تفصيل.</h2></div><p>متجر N by N يجمع بين الهوية الراقية وتجربة شراء سهلة وآمنة. المنتجات والأسعار والمخزون والطلبات والعملاء تتم إدارتها من لوحة تحكم واحدة.</p></section>
+<section id="contact" class="section contact"><div><span class="eyebrow">CUSTOMER SERVICE</span><h2>تواصل معنا</h2><p>نحن هنا لمساعدتك في اختيار المنتج أو متابعة طلبك.</p></div><form id="contactForm"><input name="name" placeholder="الاسم الكامل" autocomplete="name" required><input name="email" type="email" placeholder="البريد الإلكتروني" autocomplete="email" required><input name="phone" type="tel" placeholder="رقم الهاتف / WhatsApp" autocomplete="tel" required><textarea name="message" placeholder="رسالتك" required></textarea><button class="goldBtn" type="submit">إرسال الرسالة</button></form></section>
 </main>
-
-<footer>
-  <img src="./logo.jpg" alt="N by N">
-  <p>© 2026 N by N — Online Store</p>
-</footer>
-
-<aside id="cart" class="drawer" aria-label="سلة التسوق" aria-hidden="true">
-  <div class="drawerHead">
-    <h3>السلة</h3>
-    <button id="closeCart" type="button" aria-label="إغلاق">×</button>
-  </div>
-  <div id="cartItems"></div>
-  <div class="sum"><span>المجموع</span><strong id="cartTotal">0 DA</strong></div>
-  <button id="checkout" class="btn full" type="button">إتمام الطلب</button>
-</aside>
-
-<div id="account" class="modal" aria-hidden="true">
-  <div class="modalBox">
-    <button class="close" data-close="account" type="button" aria-label="إغلاق">×</button>
-    <h2>حسابي</h2>
-    <div id="authArea">
-      <input id="authEmail" type="email" placeholder="البريد الإلكتروني" autocomplete="email">
-      <input id="authPass" type="password" placeholder="كلمة المرور" autocomplete="current-password">
-      <button id="signIn" class="btn full" type="button">تسجيل الدخول</button>
-      <button id="signUp" class="outline full" type="button">إنشاء حساب</button>
-      <button id="signOut" class="outline full hidden" type="button">تسجيل الخروج</button>
-      <p id="authMsg" class="message"></p>
-    </div>
-  </div>
-</div>
-
+<footer><img src="./logo.jpg" alt="N by N"><div><b>N BY N — ONLINE STORE</b><p>© 2026 N by N. جميع الحقوق محفوظة.</p></div><a href="./admin.html">لوحة الإدارة</a></footer>
+<aside id="cart" class="drawer" aria-hidden="true"><div class="drawerHead"><h3>سلة التسوق</h3><button id="closeCart">×</button></div><div id="cartItems"></div><div class="sum"><span>المجموع</span><strong id="cartTotal">0 DA</strong></div><button id="checkout" class="goldBtn full">إتمام الطلب</button></aside>
+<div id="account" class="modal" aria-hidden="true"><div class="modalBox"><button class="close" data-close="account">×</button><span class="eyebrow">N BY N ACCOUNT</span><h2>حسابك</h2><div id="signupFields"><input id="authName" placeholder="الاسم الكامل" autocomplete="name"><input id="authPhone" type="tel" placeholder="رقم الهاتف / WhatsApp" autocomplete="tel" inputmode="tel"></div><input id="authEmail" type="email" placeholder="البريد الإلكتروني" autocomplete="email"><input id="authPass" type="password" placeholder="كلمة المرور (6 أحرف على الأقل)" autocomplete="current-password"><button id="signIn" class="goldBtn full">تسجيل الدخول</button><button id="signUp" class="outline full">إنشاء حساب جديد</button><button id="signOut" class="outline full hidden">تسجيل الخروج</button><p id="authMsg" class="message"></p></div></div>
+<div id="checkoutModal" class="modal" aria-hidden="true"><div class="modalBox"><button class="close" data-close="checkoutModal">×</button><span class="eyebrow">CHECKOUT</span><h2>بيانات التوصيل</h2><p class="muted">أدخل رقمك وعنوانك لإرسال الطلب.</p><input id="checkoutName" placeholder="الاسم الكامل" autocomplete="name"><input id="checkoutPhone" type="tel" placeholder="رقم الهاتف / WhatsApp" autocomplete="tel"><textarea id="checkoutAddress" placeholder="العنوان بالتفصيل"></textarea><button id="placeOrder" class="goldBtn full">تأكيد الطلب</button><p id="checkoutMsg" class="message"></p></div></div>
+<div id="productModal" class="modal" aria-hidden="true"><div class="modalBox productDetail"><button class="close" data-close="productModal">×</button><div id="productDetailBody"></div></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./config.js"></script>
-<script src="./store.js"></script>
-</body>
-</html>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./config.js"></script><script src="./store.js"></script>
+</body></html>

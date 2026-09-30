@@ -1,27 +1,35 @@
-N by N — GitHub Pages version
+N BY N — FINAL STORE
+====================
 
-FILES MUST STAY IN THE REPOSITORY ROOT:
-index.html
-admin.html
-style.css
-admin.css
-config.js
-store.js
-admin.js
-logo.jpg
-supabase.sql
-.nojekyll
+النسخة تتضمن:
+- تصميم فاخر عنابي/ذهبي قريب من المرجع المرسل.
+- متجر متجاوب للهاتف والكمبيوتر.
+- بحث وتصنيفات رجال/نساء/عروض.
+- سلة مشتريات.
+- تسجيل العملاء بالبريد + رقم الهاتف/WhatsApp + كلمة مرور.
+- حفظ العملاء في Supabase.
+- Checkout مع الاسم والهاتف والعنوان.
+- إنشاء الطلب والتحقق من المخزون وحساب الإجمالي داخل قاعدة البيانات.
+- لوحة إدارة للمنتجات والطلبات والعملاء والرسائل والمخزون والكوبونات.
+- إضافة/تعديل المنتجات ورفع حتى 5 صور لكل منتج من الهاتف مباشرة إلى Supabase Storage.
+- ضغط الصور تلقائياً قبل الرفع.
+- صلاحيات RLS وحماية رفع الصور للمدير فقط.
 
-Supabase URL:
-https://iomrkxwclbkvadldqcxa.supabase.co
+النشر على GitHub Pages:
+1) ارفع محتويات هذا المجلد إلى مستودع GitHub.
+2) فعّل GitHub Pages من Settings > Pages > Deploy from branch > main.
+3) افتح index.html من رابط GitHub Pages.
 
-IMPORTANT:
-Use only the Publishable key in config.js. Never put a Secret/Service Role key in a public website.
+Supabase:
+1) افتح Supabase > SQL Editor.
+2) شغّل ملف SUPABASE_SETUP.sql مرة واحدة.
+3) أنشئ حساب المدير في Authentication > Users.
+4) خذ UUID للحساب ثم نفّذ:
+   update public.profiles set role='admin' where id='YOUR_AUTH_USER_UUID';
+5) لا تضع Secret/Service Role key في الموقع. استخدم Publishable key فقط.
 
-GitHub Pages:
-Settings -> Pages -> Deploy from a branch -> main -> /(root) -> Save
+الدومين:
+يمكن ربط www.nbyn.com لاحقاً مع الاستضافة (GitHub Pages أو Netlify) بعد ضبط DNS.
 
-After saving, wait for the Pages deployment to finish, then open the generated Pages URL.
-
-Custom domain www.nbyn.com:
-After the site works on GitHub Pages, configure www.nbyn.com in Settings -> Pages -> Custom domain, then add the DNS record requested by GitHub at your domain provider.
+ملاحظة:
+العملة الحالية QAR ويمكن تغييرها من config.js في السطر CURRENCY.

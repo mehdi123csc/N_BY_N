@@ -1,339 +1,66 @@
 (() => {
-  "use strict";
-
+  'use strict';
   const cfg = window.NBYN_CONFIG || {};
-  const supabaseLib = window.supabase;
+  const lib = window.supabase;
+  const sb = (lib && cfg.SUPABASE_URL && cfg.SUPABASE_KEY) ? lib.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_KEY) : null;
+  const $ = s => document.querySelector(s);
+  const money = n => Number(n || 0).toLocaleString('fr-FR') + ' ' + (cfg.CURRENCY || 'QAR');
+  let products = [], cart = JSON.parse(localStorage.getItem('nbyn_cart') || '[]');
+  if (!Array.isArray(cart)) cart = [];
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  const toast = msg => { const e=$('#toast'); if(!e)return; e.textContent=msg;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2500); };
+  const saveCart=()=>{localStorage.setItem('nbyn_cart',JSON.stringify(cart));updateCart();};
+  const open=(id)=>{$('#'+id)?.classList.add('show');$('#'+id)?.setAttribute('aria-hidden','false');};
+  const close=(id)=>{$('#'+id)?.classList.remove('show');$('#'+id)?.setAttribute('aria-hidden','true');};
 
-  let sb = null;
-  if (supabaseLib && typeof cfg.SUPABASE_URL === "string" && cfg.SUPABASE_URL.startsWith("https://") && cfg.SUPABASE_KEY) {
-    sb = supabaseLib.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_KEY);
-  }
-
-  const $ = (selector) => document.querySelector(selector);
-  const money = (value) => Number(value || 0).toLocaleString("fr-FR") + " DA";
-
-  let products = [];
-  let cart = [];
-  try {
-    cart = JSON.parse(localStorage.getItem("nbyn_cart") || "[]");
-    if (!Array.isArray(cart)) cart = [];
-  } catch (_) {
-    cart = [];
-  }
-
-  function escapeHtml(value) {
-    return String(value ?? "").replace(/[&<>"']/g, (c) => ({
-      "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
-    }[c]));
-  }
-
-  function toast(message) {
-    const el = $("#toast");
-    if (!el) return;
-    el.textContent = message;
-    el.classList.add("show");
-    window.clearTimeout(toast.timer);
-    toast.timer = window.setTimeout(() => el.classList.remove("show"), 2200);
-  }
-
-  function saveCart() {
-    localStorage.setItem("nbyn_cart", JSON.stringify(cart));
-    updateCart();
-  }
-
-  async function loadProducts(category = "all") {
-    const box = $("#products");
-    if (box) box.innerHTML = '<div class="loading">جاري تحميل المنتجات...</div>';
-
-    if (!sb) {
-      products = [
-        { id:"demo-1", name:"Classic Blazer", category:"men", price:8500, stock:18, image_url:"" },
-        { id:"demo-2", name:"Urban Shirt", category:"men", price:4200, stock:30, image_url:"" },
-        { id:"demo-3", name:"Elegant Dress", category:"women", price:9800, stock:12, image_url:"" },
-        { id:"demo-4", name:"Luxury Set", category:"women", price:11500, stock:9, image_url:"" }
-      ].filter(p => category === "all" || p.category === category);
-      renderProducts();
-      return;
-    }
-
-    let query = sb.from("products")
-      .select("*")
-      .eq("active", true)
-      .order("created_at", { ascending:false });
-
-    if (category !== "all") query = query.eq("category", category);
-
-    const result = await query;
-    if (result.error) {
-      console.error(result.error);
-      products = [];
-      if (box) box.innerHTML = '<div class="loading">تعذر تحميل المنتجات. تحقق من اتصال Supabase.</div>';
-      return;
-    }
-
-    products = result.data || [];
+  async function loadProducts(category='all', search='') {
+    const box=$('#products'); if(box) box.innerHTML='<div class="loading">جاري تحميل المنتجات...</div>';
+    if(!sb){ products=[]; return renderProducts(); }
+    let q=sb.from('products').select('*').eq('active',true).order('created_at',{ascending:false});
+    if(category==='men'||category==='women') q=q.eq('category',category);
+    if(category==='offers') q=q.gt('discount_percent',0);
+    const r=await q;
+    if(r.error){console.error(r.error);if(box)box.innerHTML='<div class="loading">تعذر تحميل المنتجات. تحقق من Supabase.</div>';return;}
+    products=(r.data||[]).filter(p=>!search||String(p.name+' '+(p.description||'')).toLowerCase().includes(search.toLowerCase()));
     renderProducts();
   }
-
-  function renderProducts() {
-    const box = $("#products");
-    if (!box) return;
-
-    if (!products.length) {
-      box.innerHTML = '<div class="loading">لا توجد منتجات حالياً.</div>';
-      return;
-    }
-
-    box.innerHTML = products.map((p) => {
-      const categoryName = p.category === "women" ? "نساء" : "رجال";
-      const visual = p.image_url
-        ? `<img class="productImage" src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><div class="picFallback">${p.category === "women" ? "N♀" : "N♂"}</div>`
-        : `<div class="picFallback">${p.category === "women" ? "N♀" : "N♂"}</div>`;
-
-      return `
-        <article class="card">
-          <div class="pic">${visual}</div>
-          <div class="body">
-            <small>${categoryName}</small>
-            <h3>${escapeHtml(p.name)}</h3>
-            ${p.description ? `<p class="productDesc">${escapeHtml(p.description)}</p>` : ""}
-            <b>${money(p.price)}</b>
-            <button type="button" onclick="window.NBYN.addToCart('${String(p.id)}')">أضف إلى السلة</button>
-          </div>
-        </article>`;
-    }).join("");
+  function imageList(p){
+    let a=[]; try{a=Array.isArray(p.image_urls)?p.image_urls:JSON.parse(p.image_urls||'[]')}catch(_){a=[]}
+    if(!a.length && p.image_url) a=[p.image_url]; return a.filter(Boolean);
   }
-
-  function addToCart(id) {
-    const product = products.find(p => String(p.id) === String(id));
-    if (!product) return;
-
-    cart.push({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      category: product.category,
-      image_url: product.image_url || ""
-    });
-
-    saveCart();
-    toast("تمت إضافة المنتج إلى السلة");
+  function renderProducts(){
+    const box=$('#products'); if(!box)return;
+    if(!products.length){box.innerHTML='<div class="loading">لا توجد منتجات مطابقة.</div>';return;}
+    box.innerHTML=products.map(p=>{
+      const imgs=imageList(p), img=imgs[0]||''; const disc=Number(p.discount_percent||0); const old=Number(p.old_price||0); const cat=p.category==='women'?'نساء':'رجال';
+      return `<article class="card"><div class="pic">${img?`<img class="productImage" src="${esc(img)}" alt="${esc(p.name)}" loading="lazy">`:'<div style="display:grid;place-items:center;height:100%;font:700 65px Cormorant Garamond;color:#8a1538">N</div>'}${disc?`<span class="discount">-${disc}%</span>`:''}<button class="fav" data-fav="${esc(p.id)}">♡</button></div><div class="body"><small>${cat}</small><h3>${esc(p.name)}</h3><p>${esc(p.description||'')}</p><div class="price"><b>${money(p.price)}</b>${old?`<span class="old">${money(old)}</span>`:''}</div><div class="cardActions"><button data-add="${esc(p.id)}">أضف للسلة</button><button class="alt" data-view="${esc(p.id)}">عرض</button></div></div></article>`;
+    }).join('');
+    box.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>addToCart(b.dataset.add));
+    box.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>showProduct(b.dataset.view));
+    box.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{b.textContent=b.textContent==='♡'?'♥':'♡';toast('تم تحديث المفضلة');});
   }
+  function addToCart(id){const p=products.find(x=>String(x.id)===String(id));if(!p)return;const existing=cart.find(x=>String(x.id)===String(id));if(existing)existing.quantity=Math.min(Number(existing.quantity||1)+1,Number(p.stock||99));else cart.push({id:p.id,name:p.name,price:Number(p.price||0),image_url:p.image_url||'',quantity:1});saveCart();toast('تمت إضافة المنتج إلى السلة');}
+  function updateCart(){const c=$('#cartCount'), box=$('#cartItems'), total=$('#cartTotal');c&&(c.textContent=String(cart.reduce((n,x)=>n+Number(x.quantity||1),0)));if(box)box.innerHTML=cart.length?cart.map((p,i)=>`<div class="cartRow"><span>${esc(p.name)} × ${Number(p.quantity||1)}</span><b>${money(Number(p.price)*Number(p.quantity||1))}</b><button data-remove="${i}">×</button></div>`).join(''):'<p>السلة فارغة.</p>';box?.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{cart.splice(Number(b.dataset.remove),1);saveCart();});if(total)total.textContent=money(cart.reduce((s,p)=>s+Number(p.price)*Number(p.quantity||1),0));}
+  function showProduct(id){const p=products.find(x=>String(x.id)===String(id));if(!p)return;const imgs=imageList(p), body=$('#productDetailBody');if(!body)return;body.innerHTML=`<div class="gallery">${imgs.map(i=>`<img src="${esc(i)}" alt="${esc(p.name)}">`).join('')}</div><span class="eyebrow">${p.category==='women'?'WOMEN':'MEN'}</span><h3>${esc(p.name)}</h3><p>${esc(p.description||'')}</p><div class="price"><b>${money(p.price)}</b>${p.old_price?`<span class="old">${money(p.old_price)}</span>`:''}</div><p class="muted">المقاسات: ${esc(p.sizes||'متوفر حسب المنتج')}</p><button class="goldBtn full" id="detailAdd">أضف إلى السلة</button>`;$('#detailAdd').onclick=()=>{addToCart(p.id);close('productModal');};open('productModal');}
 
-  function removeCart(index) {
-    cart.splice(index, 1);
-    saveCart();
+  async function startCheckout(){if(!cart.length)return toast('السلة فارغة');if(!sb)return toast('Supabase غير متصل');const {data}=await sb.auth.getUser();if(!data?.user){open('account');$('#authMsg').textContent='سجّل الدخول أولًا لإتمام الطلب.';return;}const prof=await sb.from('profiles').select('full_name,phone').eq('id',data.user.id).maybeSingle();$('#checkoutName').value=prof.data?.full_name||data.user.user_metadata?.full_name||'';$('#checkoutPhone').value=prof.data?.phone||data.user.user_metadata?.phone||'';open('checkoutModal');}
+  async function placeOrder(){const msg=$('#checkoutMsg');msg.textContent='جاري إرسال الطلب...';const name=$('#checkoutName').value.trim(),phone=$('#checkoutPhone').value.trim(),address=$('#checkoutAddress').value.trim();if(!name||phone.replace(/\D/g,'').length<8||address.length<6){msg.textContent='أدخل الاسم ورقم الهاتف/واتساب والعنوان بشكل صحيح.';return;}const items=cart.map(x=>({product_id:x.id,quantity:Number(x.quantity||1)}));const r=await sb.rpc('create_order',{p_customer_name:name,p_phone:phone,p_address:address,p_items:items});if(r.error){console.error(r.error);msg.textContent=r.error.message||'تعذر إنشاء الطلب.';return;}cart=[];saveCart();close('checkoutModal');close('cart');toast('تم إرسال طلبك بنجاح');}
+  async function submitMessage(e){e.preventDefault();if(!sb)return toast('Supabase غير متصل');const d=Object.fromEntries(new FormData(e.currentTarget).entries());const r=await sb.from('messages').insert({name:String(d.name).trim(),email:String(d.email).trim(),phone:String(d.phone).trim(),message:String(d.message).trim()});if(r.error){toast('تعذر إرسال الرسالة');console.error(r.error);return;}e.currentTarget.reset();toast('تم إرسال رسالتك بنجاح');}
+  async function signIn(){const msg=$('#authMsg'),email=$('#authEmail').value.trim(),password=$('#authPass').value;if(!email||!password){msg.textContent='أدخل البريد الإلكتروني وكلمة المرور.';return;}const r=await sb.auth.signInWithPassword({email,password});msg.textContent=r.error?r.error.message:'تم تسجيل الدخول بنجاح.';if(!r.error)updateAuth(r.data.session);}
+  async function signUp(){const msg=$('#authMsg'),name=$('#authName').value.trim(),phone=$('#authPhone').value.trim(),email=$('#authEmail').value.trim(),password=$('#authPass').value;if(!name||phone.replace(/\D/g,'').length<8||!email||password.length<6){msg.textContent='أدخل الاسم والرقم والبريد وكلمة مرور 6 أحرف على الأقل.';return;}const r=await sb.auth.signUp({email,password,options:{data:{full_name:name,phone}}});if(r.error){msg.textContent=r.error.message;return;}if(r.data?.user?.id&&r.data?.session){await sb.from('profiles').upsert({id:r.data.user.id,full_name:name,phone,email,role:'customer'},{onConflict:'id'});}msg.textContent=r.data?.session?'تم إنشاء الحساب بنجاح.':'تم إنشاء الحساب. تحقق من بريدك الإلكتروني ثم سجّل الدخول.';}
+  async function signOut(){await sb?.auth.signOut();updateAuth(null);$('#authMsg').textContent='تم تسجيل الخروج.';}
+  function updateAuth(session){$('#signIn')?.classList.toggle('hidden',!!session);$('#signUp')?.classList.toggle('hidden',!!session);$('#signOut')?.classList.toggle('hidden',!session);if(session){$('#signupFields')?.classList.add('hidden');}}
+  function setup(){
+    $('#cartBtn').onclick=()=>open('cart');$('#closeCart').onclick=()=>close('cart');$('#checkout').onclick=startCheckout;$('#placeOrder').onclick=placeOrder;$('#accountBtn').onclick=()=>open('account');$('#signIn').onclick=signIn;$('#signUp').onclick=signUp;$('#signOut').onclick=signOut;$('#contactForm').onsubmit=submitMessage;
+    document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>close(b.dataset.close));
+    document.querySelectorAll('.filters button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.filters button').forEach(x=>x.classList.remove('active'));b.classList.add('active');loadProducts(b.dataset.cat,$('#searchInput').value.trim());});
+    document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.filters button').forEach(x=>x.classList.remove('active'));document.querySelector(`.filters button[data-cat="${b.dataset.cat}"]`)?.classList.add('active');document.querySelector('#shop').scrollIntoView({behavior:'smooth'});loadProducts(b.dataset.cat);});
+    document.querySelectorAll('[data-jump]').forEach(a=>a.onclick=()=>{const c=a.dataset.jump;setTimeout(()=>loadProducts(c),0);});
+    $('#showAll').onclick=(e)=>{e.preventDefault();document.querySelector('.filters button[data-cat="all"]').click();};
+    let t;$('#searchInput').oninput=()=>{clearTimeout(t);t=setTimeout(()=>loadProducts(document.querySelector('.filters button.active')?.dataset.cat||'all',$('#searchInput').value.trim()),250);};
+    if(sb){sb.auth.getSession().then(({data})=>updateAuth(data?.session||null));sb.auth.onAuthStateChange((_e,s)=>updateAuth(s));}
+    updateCart();loadProducts();
   }
-
-  function updateCart() {
-    const count = $("#cartCount");
-    const items = $("#cartItems");
-    const total = $("#cartTotal");
-
-    if (count) count.textContent = String(cart.length);
-
-    if (items) {
-      items.innerHTML = cart.length
-        ? cart.map((p, i) => `
-          <div class="cartRow">
-            <span>${escapeHtml(p.name)}</span>
-            <b>${money(p.price)}</b>
-            <button type="button" onclick="window.NBYN.removeCart(${i})" aria-label="حذف">×</button>
-          </div>`).join("")
-        : "<p>السلة فارغة</p>";
-    }
-
-    if (total) {
-      total.textContent = money(cart.reduce((sum, p) => sum + Number(p.price || 0), 0));
-    }
-  }
-
-  async function checkout() {
-    if (!cart.length) return toast("السلة فارغة");
-    if (!sb) return toast("Supabase غير متصل");
-
-    const userResult = await sb.auth.getUser();
-    const user = userResult.data?.user;
-    if (!user) {
-      openAccount();
-      return;
-    }
-
-    const total = cart.reduce((sum, p) => sum + Number(p.price || 0), 0);
-
-    const orderResult = await sb.from("orders").insert({
-      user_id: user.id,
-      customer_name: user.email || "Customer",
-      total,
-      status: "new"
-    }).select().single();
-
-    if (orderResult.error) {
-      console.error(orderResult.error);
-      return toast("تعذر إنشاء الطلب");
-    }
-
-    const items = cart.map(p => ({
-      order_id: orderResult.data.id,
-      product_id: p.id,
-      product_name: p.name,
-      quantity: 1,
-      unit_price: Number(p.price || 0)
-    }));
-
-    const itemsResult = await sb.from("order_items").insert(items);
-    if (itemsResult.error) {
-      console.error(itemsResult.error);
-      return toast("تم إنشاء الطلب لكن تعذر حفظ تفاصيل المنتجات");
-    }
-
-    cart = [];
-    saveCart();
-    closeCart();
-    toast("تم إرسال الطلب بنجاح");
-  }
-
-  async function submitMessage(event) {
-    event.preventDefault();
-
-    const form = event.currentTarget;
-    const data = new FormData(form);
-
-    if (!sb) return toast("Supabase غير متصل");
-
-    const result = await sb.from("messages").insert({
-      name: String(data.get("name") || "").trim(),
-      email: String(data.get("email") || "").trim(),
-      message: String(data.get("message") || "").trim()
-    });
-
-    if (result.error) {
-      console.error(result.error);
-      toast("تعذر إرسال الرسالة");
-      return;
-    }
-
-    form.reset();
-    toast("تم إرسال رسالتك بنجاح");
-  }
-
-  function openCart() {
-    const el = $("#cart");
-    if (!el) return;
-    el.classList.add("show");
-    el.setAttribute("aria-hidden", "false");
-  }
-
-  function closeCart() {
-    const el = $("#cart");
-    if (!el) return;
-    el.classList.remove("show");
-    el.setAttribute("aria-hidden", "true");
-  }
-
-  function openAccount() {
-    const el = $("#account");
-    if (!el) return;
-    el.classList.add("show");
-    el.setAttribute("aria-hidden", "false");
-  }
-
-  function closeModal(id) {
-    const el = $("#" + id);
-    if (!el) return;
-    el.classList.remove("show");
-    el.setAttribute("aria-hidden", "true");
-  }
-
-  async function signIn() {
-    if (!sb) return $("#authMsg").textContent = "Supabase غير متصل.";
-
-    const email = $("#authEmail")?.value.trim();
-    const password = $("#authPass")?.value;
-
-    if (!email || !password) {
-      $("#authMsg").textContent = "أدخل البريد الإلكتروني وكلمة المرور.";
-      return;
-    }
-
-    const result = await sb.auth.signInWithPassword({ email, password });
-    $("#authMsg").textContent = result.error ? result.error.message : "تم تسجيل الدخول بنجاح.";
-  }
-
-  async function signUp() {
-    if (!sb) return $("#authMsg").textContent = "Supabase غير متصل.";
-
-    const email = $("#authEmail")?.value.trim();
-    const password = $("#authPass")?.value;
-
-    if (!email || !password) {
-      $("#authMsg").textContent = "أدخل البريد الإلكتروني وكلمة المرور.";
-      return;
-    }
-
-    if (password.length < 6) {
-      $("#authMsg").textContent = "كلمة المرور يجب أن تكون 6 أحرف على الأقل.";
-      return;
-    }
-
-    const result = await sb.auth.signUp({ email, password });
-    $("#authMsg").textContent = result.error
-      ? result.error.message
-      : "تم إنشاء الحساب. تحقق من بريدك إذا كان التحقق مفعلاً.";
-  }
-
-  async function signOut() {
-    if (sb) await sb.auth.signOut();
-    $("#authMsg").textContent = "تم تسجيل الخروج.";
-    updateAuthButtons(null);
-  }
-
-  function updateAuthButtons(session) {
-    $("#signIn")?.classList.toggle("hidden", !!session);
-    $("#signUp")?.classList.toggle("hidden", !!session);
-    $("#signOut")?.classList.toggle("hidden", !session);
-  }
-
-  function setup() {
-    $("#cartBtn")?.addEventListener("click", openCart);
-    $("#closeCart")?.addEventListener("click", closeCart);
-    $("#checkout")?.addEventListener("click", checkout);
-    $("#accountBtn")?.addEventListener("click", openAccount);
-    $("#signIn")?.addEventListener("click", signIn);
-    $("#signUp")?.addEventListener("click", signUp);
-    $("#signOut")?.addEventListener("click", signOut);
-
-    document.querySelectorAll("[data-close]").forEach(btn => {
-      btn.addEventListener("click", () => closeModal(btn.dataset.close));
-    });
-
-    document.querySelectorAll(".filters button").forEach(btn => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".filters button").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        loadProducts(btn.dataset.cat || "all");
-      });
-    });
-
-    $("#contactForm")?.addEventListener("submit", submitMessage);
-
-    if (sb) {
-      sb.auth.getSession().then(({ data }) => updateAuthButtons(data?.session || null));
-      sb.auth.onAuthStateChange((_event, session) => updateAuthButtons(session));
-    }
-
-    updateCart();
-    loadProducts();
-  }
-
-  window.NBYN = {
-    addToCart,
-    removeCart,
-    openCart,
-    closeCart,
-    openAccount,
-    checkout
-  };
-
+  window.NBYN={addToCart,removeCart:i=>{cart.splice(i,1);saveCart();}};
   setup();
 })();
