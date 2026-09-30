@@ -6,13 +6,13 @@
 <meta name="theme-color" content="#5a0c25">
 <meta name="description" content="N by N — متجر أزياء فاخر للرجال والنساء">
 <title>N by N — Online Store</title>
-<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./style-v2.css?v=20260930">
 </head>
 <body>
 <header class="header">
   <div class="topbar">
     <div class="lang"><span>🌐 العربية⌄</span><span class="qatarDot">◐ Qatar</span></div>
-    <a class="brand" href="#home"><img src="./logo.jpg" alt="N by N"><span>N BY N</span></a>
+    <a class="brand" href="#home"><img src="./logo.jpg?v=20260930" alt="N by N"><span>N BY N</span></a>
     <div class="headTools">
       <label class="search"><input id="searchInput" type="search" placeholder="ابحث عن منتجك المفضل..."><span>⌕</span></label>
       <button id="accountBtn" type="button">♙ حسابي</button>
@@ -24,19 +24,12 @@
   </nav>
 </header>
 <main>
-<section id="home" class="hero">
-  <div class="heroOverlay"></div>
-  <div class="heroContent">
-    <span class="eyebrow">N BY N • ONLINE STORE</span>
-    <h1>أناقتك .. أسلوب حياتك</h1>
-    <p>تشكيلة فاخرة للرجال والنساء، مصممة لتمنحك حضورًا يليق بك.</p>
-    <a class="goldBtn" href="#shop">تسوق الآن 🛍</a>
-  </div>
-  <div class="heroBenefits"><div>🚚<b>توصيل سريع</b><small>لكل أنحاء قطر</small></div><div>🛡<b>دفع آمن</b><small>100%</small></div><div>🎧<b>خدمة عملاء</b><small>24/7</small></div></div>
+<section id="home" class="hero heroImageOnly">
+  <a class="heroImageLink" href="#shop" aria-label="تسوق الآن"><img class="heroImage" src="./hero.jpg?v=20260930" alt="N by N Online Store"></a>
 </section>
 <section class="categoryBanners">
-  <button class="catBanner" data-cat="men" style="background-image:url('./men.jpg')"><span>الرجال<small>MEN</small><b>تسوق الآن →</b></span></button>
-  <button class="catBanner" data-cat="women" style="background-image:url('./women.jpg')"><span>النساء<small>WOMEN</small><b>تسوق الآن →</b></span></button>
+  <button class="catBanner" data-cat="men" style="background-image:url('./men.jpg?v=20260930')"><span>الرجال<small>MEN</small><b>تسوق الآن →</b></span></button>
+  <button class="catBanner" data-cat="women" style="background-image:url('./women.jpg?v=20260930')"><span>النساء<small>WOMEN</small><b>تسوق الآن →</b></span></button>
 </section>
 <section class="serviceStrip"><div>☆<b>منتجات أصلية</b><small>جودة مضمونة</small></div><div>↻<b>إرجاع سهل</b><small>خلال 7 أيام</small></div><div>▣<b>دفع عند الاستلام</b><small>متوفر في المناطق</small></div><div>🎁<b>عروض حصرية</b><small>نضيفها دائمًا</small></div><div>♡<b>مفضلاتك</b><small>تجربة شخصية</small></div></section>
 <section id="shop" class="section shopSection">
@@ -48,11 +41,11 @@
 <section id="about" class="about section"><div><span class="eyebrow">N BY N</span><h2>الفخامة<br>في كل تفصيل.</h2></div><p>متجر N by N يجمع بين الهوية الراقية وتجربة شراء سهلة وآمنة. المنتجات والأسعار والمخزون والطلبات والعملاء تتم إدارتها من لوحة تحكم واحدة.</p></section>
 <section id="contact" class="section contact"><div><span class="eyebrow">CUSTOMER SERVICE</span><h2>تواصل معنا</h2><p>نحن هنا لمساعدتك في اختيار المنتج أو متابعة طلبك.</p></div><form id="contactForm"><input name="name" placeholder="الاسم الكامل" autocomplete="name" required><input name="email" type="email" placeholder="البريد الإلكتروني" autocomplete="email" required><input name="phone" type="tel" placeholder="رقم الهاتف / WhatsApp" autocomplete="tel" required><textarea name="message" placeholder="رسالتك" required></textarea><button class="goldBtn" type="submit">إرسال الرسالة</button></form></section>
 </main>
-<footer><img src="./logo.jpg" alt="N by N"><div><b>N BY N — ONLINE STORE</b><p>© 2026 N by N. جميع الحقوق محفوظة.</p></div><a href="./admin.html">لوحة الإدارة</a></footer>
+<footer><img src="./logo.jpg?v=20260930" alt="N by N"><div><b>N BY N — ONLINE STORE</b><p>© 2026 N by N. جميع الحقوق محفوظة.</p></div><a href="./admin.html">لوحة الإدارة</a></footer>
 <aside id="cart" class="drawer" aria-hidden="true"><div class="drawerHead"><h3>سلة التسوق</h3><button id="closeCart">×</button></div><div id="cartItems"></div><div class="sum"><span>المجموع</span><strong id="cartTotal">0 DA</strong></div><button id="checkout" class="goldBtn full">إتمام الطلب</button></aside>
 <div id="account" class="modal" aria-hidden="true"><div class="modalBox"><button class="close" data-close="account">×</button><span class="eyebrow">N BY N ACCOUNT</span><h2>حسابك</h2><div id="signupFields"><input id="authName" placeholder="الاسم الكامل" autocomplete="name"><input id="authPhone" type="tel" placeholder="رقم الهاتف / WhatsApp" autocomplete="tel" inputmode="tel"></div><input id="authEmail" type="email" placeholder="البريد الإلكتروني" autocomplete="email"><input id="authPass" type="password" placeholder="كلمة المرور (6 أحرف على الأقل)" autocomplete="current-password"><button id="signIn" class="goldBtn full">تسجيل الدخول</button><button id="signUp" class="outline full">إنشاء حساب جديد</button><button id="signOut" class="outline full hidden">تسجيل الخروج</button><p id="authMsg" class="message"></p></div></div>
 <div id="checkoutModal" class="modal" aria-hidden="true"><div class="modalBox"><button class="close" data-close="checkoutModal">×</button><span class="eyebrow">CHECKOUT</span><h2>بيانات التوصيل</h2><p class="muted">أدخل رقمك وعنوانك لإرسال الطلب.</p><input id="checkoutName" placeholder="الاسم الكامل" autocomplete="name"><input id="checkoutPhone" type="tel" placeholder="رقم الهاتف / WhatsApp" autocomplete="tel"><textarea id="checkoutAddress" placeholder="العنوان بالتفصيل"></textarea><button id="placeOrder" class="goldBtn full">تأكيد الطلب</button><p id="checkoutMsg" class="message"></p></div></div>
 <div id="productModal" class="modal" aria-hidden="true"><div class="modalBox productDetail"><button class="close" data-close="productModal">×</button><div id="productDetailBody"></div></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./config.js"></script><script src="./store.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./config.js?v=20260930"></script><script src="./store.js?v=20260930"></script>
 </body></html>
