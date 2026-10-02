@@ -1,540 +1,71 @@
 (() => {
 'use strict';
+const cfg=window.NBYN_CONFIG||{},lib=window.supabase;
+const sb=lib&&cfg.SUPABASE_URL&&cfg.SUPABASE_KEY?lib.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_KEY):null;
+const $=s=>document.querySelector(s),money=n=>Number(n||0).toLocaleString('fr-FR')+' DA';
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+function msg(t){if($('#loginMsg'))$('#loginMsg').textContent=t||''}
 
-const cfg=window.NBYN_CONFIG||{},
-      lib=window.supabase;
 
-const sb=
-  lib&&cfg.SUPABASE_URL&&cfg.SUPABASE_KEY
-  ?lib.createClient(
-      cfg.SUPABASE_URL,
-      cfg.SUPABASE_KEY
-    )
-  :null;
+async function login(){
 
-const $=s=>document.querySelector(s),
-      money=n=>Number(n||0)
-        .toLocaleString('fr-FR')+' DA';
+  if(!sb)
+    return msg('تعذر الاتصال بـ Supabase.');
 
-const esc=v=>
-  String(v??'').replace(
-    /[&<>"']/g,
-    c=>({
-      '&':'&amp;',
-      '<':'&lt;',
-      '>':'&gt;',
-      '"':'&quot;',
-      "'":'&#039;'
-    }[c])
-  );
+  const email=$('#email').value.trim(),
+        password=$('#password').value;
 
-function msg(t){
-  if($('#loginMsg'))
-    $('#loginMsg').textContent=t||''
-}
+  if(!email||!password)
+    return msg('أدخل البريد وكلمة المرور.');
 
-function removeMfa(){
-  document
-    .querySelector('#adminMfaBox')
-    ?.remove()
-}
+  msg('جاري تسجيل الدخول...');
 
-function mfaBox(html){
-
-  removeMfa();
-
-  const r=document.querySelector('.loginBox');
-
-  if(!r)return null;
-
-  const b=document.createElement('div');
-
-  b.id='adminMfaBox';
-  b.innerHTML=html;
-
-  r.appendChild(b);
-
-  return b
-}
-
-async function verifiedFactor(){
-
-  const r=await sb.auth.mfa.listFactors();
+  const r=await sb.auth.signInWithPassword({
+    email,
+    password
+  });
 
   if(r.error)
-    throw r.error;
+    return msg(r.error.message);
 
-  return(
-    r.data?.totp||[]
-  ).find(
-    f=>f.status==='verified'
-  )||null
+  msg('');
+  await boot();
 }
 
-async function verifyFactor(id,code){
-
-  code=String(code||'')
-    .replace(/\s/g,'');
-
-  if(!/^\d{6}$/.test(code))
-    throw new Error(
-      'أدخل رمز Authenticator المكوّن من 6 أرقام.'
-    );
-
-  const c=
-    await sb.auth.mfa.challenge({
-      factorId:id
-    });
-
-  if(c.error)
-    throw c.error;
-
-  const v=
-    await sb.auth.mfa.verify({
-      factorId:id,
-      challengeId:c.data.id,
-      code
-    });
-
-  if(v.error)
-    throw v.error
-}
-
-async function challengeMfa(f){
-
-  const b=mfaBox(`
-
-    <div class="mfaTitle">
-      التحقق بخطوتين
-    </div>
-
-    <p>
-      أدخل رمز الـ6 أرقام من تطبيق Authenticator.
-    </p>
-
-    <input
-      id="mfaCode"
-      inputmode="numeric"
-      autocomplete="one-time-code"
-      maxlength="6"
-      placeholder="000000">
-
-    <button
-      id="mfaVerifyBtn"
-      class="primary"
-      type="button">
-
-      تحقق ودخول
-
-    </button>
-
-    <p
-      id="mfaMsg"
-      class="message">
-    </p>
-
-  `);
-
-  if(!b)return;
-
-  const i=$('#mfaCode'),
-        bt=$('#mfaVerifyBtn'),
-        s=$('#mfaMsg');
-
-  i.focus();
-
-  const run=async()=>{
-
-    bt.disabled=true;
-
-    s.textContent='جاري التحقق...';
-
-    try{
-
-      await verifyFactor(
-        f.id,
-        i.value
-      );
-
-      removeMfa();
-
-      await openAdmin();
-
-    }catch(e){
-
-      s.textContent=
-        e?.message||
-        'رمز التحقق غير صحيح.';
-
-      i.value='';
-      i.focus();
-
-    }finally{
-
-      bt.disabled=false
-
-    }
-  };
-
-  bt.onclick=run;
-
-  i.onkeydown=e=>{
-
-    if(e.key==='Enter')
-      run()
-
-  }
-}
-
-async function enrollMfa(){
-
-  const b=mfaBox(`
-
-    <div class="mfaTitle">
-      إعداد MFA للمدير
-    </div>
-
-    <p>
-      امسح رمز QR بتطبيق Google Authenticator
-      أو Microsoft Authenticator،
-      ثم أدخل الرمز المكوّن من 6 أرقام.
-    </p>
-
-    <div
-      id="mfaQr"
-      style="text-align:center;margin:12px 0">
-
-      جاري إنشاء QR...
-
-    </div>
-
-    <p
-      id="mfaSecret"
-      class="message">
-    </p>
-
-    <input
-      id="mfaEnrollCode"
-      inputmode="numeric"
-      autocomplete="one-time-code"
-      maxlength="6"
-      placeholder="رمز Authenticator">
-
-    <button
-      id="mfaEnrollBtn"
-      class="primary"
-      type="button">
-
-      تفعيل MFA
-
-    </button>
-
-    <p
-      id="mfaEnrollMsg"
-      class="message">
-    </p>
-
-  `);
-
-  if(!b)return;
-
-  const q=$('#mfaQr'),
-        se=$('#mfaSecret'),
-        i=$('#mfaEnrollCode'),
-        bt=$('#mfaEnrollBtn'),
-        s=$('#mfaEnrollMsg');
-
-  try{
-
-    const r=
-      await sb.auth.mfa.enroll({
-        factorType:'totp',
-        issuer:'N by N',
-        friendlyName:'N by N Admin'
-      });
-
-    if(r.error)
-      throw r.error;
-
-    const f=r.data;
-
-    if(!f.totp?.qr_code)
-      throw new Error(
-        'لم يتم إنشاء QR من Supabase.'
-      );
-
-    q.innerHTML=`
-
-      <img
-        alt="MFA QR Code"
-        style="max-width:260px;width:100%"
-        src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(
-          f.totp.qr_code
-        )}">
-
-    `;
-
-    if(f.totp.secret)
-      se.textContent=
-        'المفتاح اليدوي: '+
-        f.totp.secret;
-
-    i.focus();
-
-    const finish=async()=>{
-
-      const code=
-        i.value.replace(/\s/g,'');
-
-      if(!/^\d{6}$/.test(code)){
-
-        s.textContent=
-          'أدخل رمزًا صحيحًا من 6 أرقام.';
-
-        return
-      }
-
-      bt.disabled=true;
-
-      s.textContent=
-        'جاري تفعيل MFA...';
-
-      try{
-
-        const c=
-          await sb.auth.mfa.challenge({
-            factorId:f.id
-          });
-
-        if(c.error)
-          throw c.error;
-
-        const v=
-          await sb.auth.mfa.verify({
-            factorId:f.id,
-            challengeId:c.data.id,
-            code
-          });
-
-        if(v.error)
-          throw v.error;
-
-        const a=
-          await sb.auth
-            .mfa
-            .getAuthenticatorAssuranceLevel();
-
-        if(
-          a.error||
-          a.data?.currentLevel!=='aal2'
-        ){
-
-          throw new Error(
-            'لم يصل الحساب إلى AAL2.'
-          );
-
-        }
-
-        removeMfa();
-
-        await openAdmin();
-
-      }catch(e){
-
-        s.textContent=
-          e?.message||
-          'تعذر تفعيل MFA.';
-
-        i.value='';
-        i.focus();
-
-      }finally{
-
-        bt.disabled=false
-
-      }
-    };
-
-    bt.onclick=finish;
-
-    i.onkeydown=e=>{
-
-      if(e.key==='Enter')
-        finish()
-
-    }
-
-  }catch(e){
-
-    s.textContent=
-      e?.message||
-      'تعذر إنشاء عامل MFA.'
-
-  }
-}
-
-/* =========================================================
-   إصلاح تسجيل الدخول و MFA
-   ========================================================= */
-
-async function openAdmin(){
+async function boot(){
 
   if(!sb)return;
 
-  const {
-    data,
-    error:sessionError
-  }=await sb.auth.getSession();
-
-  if(sessionError){
-
-    return msg(
-      sessionError.message||
-      'تعذر قراءة جلسة الدخول.'
-    );
-
-  }
-
-  const u=data?.session?.user;
+  const {data}=await sb.auth.getSession(),
+        u=data?.session?.user;
 
   if(!u){
-
-    $('#login')
-      ?.classList
-      .remove('hidden');
-
-    $('#app')
-      ?.classList
-      .add('hidden');
-
-    removeMfa();
-
+    $('#login')?.classList.remove('hidden');
+    $('#app')?.classList.add('hidden');
     return;
   }
 
-  const p=
-    await sb
-      .from('profiles')
-      .select('role,full_name')
-      .eq('id',u.id)
-      .single();
+  const p=await sb
+    .from('profiles')
+    .select('role,full_name')
+    .eq('id',u.id)
+    .single();
 
   if(
     p.error||
     p.data?.role!=='admin'
   ){
-
     await sb.auth.signOut();
-
-    return msg(
-      'هذا الحساب ليس مديراً.'
-    );
-
+    return msg('هذا الحساب ليس مديراً.');
   }
 
-  const a=
-    await sb.auth
-      .mfa
-      .getAuthenticatorAssuranceLevel();
+  $('#login')?.classList.add('hidden');
+  $('#app')?.classList.remove('hidden');
 
-  if(a.error){
-
-    return msg(
-      a.error.message||
-      'تعذر التحقق من حالة MFA.'
-    );
-
-  }
-
-  let f=null;
-
-  try{
-
-    f=await verifiedFactor();
-
-  }catch(e){
-
-    return msg(
-      e?.message||
-      'تعذر قراءة عامل MFA.'
-    );
-
-  }
-
-  /*
-   * لا يوجد MFA بعد.
-   * نسمح للمدير بإعداد Authenticator.
-   */
-
-  if(
-    a.data?.currentLevel==='aal1' &&
-    !f
-  ){
-
-    $('#login')
-      ?.classList
-      .add('hidden');
-
-    $('#app')
-      ?.classList
-      .add('hidden');
-
-    return enrollMfa();
-
-  }
-
-  /*
-   * يوجد MFA ولكن لم يتم
-   * إدخال الرمز بعد.
-   */
-
-  if(
-    a.data?.currentLevel==='aal1' &&
-    f
-  ){
-
-    $('#login')
-      ?.classList
-      .add('hidden');
-
-    $('#app')
-      ?.classList
-      .add('hidden');
-
-    return challengeMfa(f);
-
-  }
-
-  /*
-   * تم التحقق بنجاح.
-   */
-
-  if(
-    a.data?.currentLevel==='aal2'
-  ){
-
-    removeMfa();
-
-    $('#login')
-      ?.classList
-      .add('hidden');
-
-    $('#app')
-      ?.classList
-      .remove('hidden');
-
-    await show('dashboard');
-
-    return;
-  }
-
-  return msg(
-    'يجب إكمال التحقق بخطوتين للدخول إلى لوحة الإدارة.'
-  );
+  await show('dashboard');
 }
 
 async function show(page){
-
   const t={
     dashboard:'لوحة التحكم',
     products:'المنتجات',
@@ -546,8 +77,7 @@ async function show(page){
     settings:'الإعدادات'
   };
 
-  $('#title').textContent=
-    t[page]||'لوحة التحكم';
+  $('#title').textContent=t[page]||'لوحة التحكم';
 
   const p={
     dashboard,
@@ -565,85 +95,51 @@ async function show(page){
 }
 
 async function getProducts(){
-
-  const r=
-    await sb
-      .from('products')
-      .select('*')
-      .order(
-        'created_at',
-        {ascending:false}
-      );
+  const r=await sb
+    .from('products')
+    .select('*')
+    .order('created_at',{ascending:false});
 
   if(r.error){
-
     showError(r.error.message);
-
     return []
-
   }
 
   return r.data||[]
 }
 
 function showError(t){
-
   $('#page').innerHTML=
     `<div class="panel error">${esc(t)}</div>`
 }
 
 async function dashboard(){
-
-  const [p,o,c,m]=
-    await Promise.all([
-
-      sb
-        .from('products')
-        .select('id,stock,active'),
-
-      sb
-        .from('orders')
-        .select('id,total,status'),
-
-      sb
-        .from('profiles')
-        .select('id'),
-
-      sb
-        .from('messages')
-        .select('id,status')
-        .eq('status','unread')
-
-    ]);
+  const [p,o,c,m]=await Promise.all([
+    sb.from('products').select('id,stock,active'),
+    sb.from('orders').select('id,total,status'),
+    sb.from('profiles').select('id'),
+    sb.from('messages').select('id,status').eq('status','unread')
+  ]);
 
   if(p.error||o.error)
-    return showError(
-      (p.error||o.error).message
-    );
+    return showError((p.error||o.error).message);
 
   const ps=p.data||[],
         os=o.data||[];
 
-  const sales=
-    os
-      .filter(
-        x=>x.status!=='cancelled'
-      )
-      .reduce(
-        (s,x)=>
-          s+Number(x.total||0),
-        0
-      );
-
-  const stock=
-    ps.reduce(
-      (s,x)=>
-        s+Number(x.stock||0),
+  const sales=os
+    .filter(x=>x.status!=='cancelled')
+    .reduce(
+      (s,x)=>s+Number(x.total||0),
       0
     );
 
-  $('#page').innerHTML=`
+  const stock=ps.reduce(
+    (s,x)=>s+Number(x.stock||0),
+    0
+  );
 
+  $('#page').innerHTML=`
     <div class="stats">
 
       <div class="stat">
@@ -669,60 +165,45 @@ async function dashboard(){
     </div>
 
     <div class="panel">
-
       <h3>مؤشرات</h3>
 
       <p>
         العملاء: ${c.data?.length||0}
         —
-        الرسائل غير المقروءة:
-        ${m.data?.length||0}
+        الرسائل غير المقروءة: ${m.data?.length||0}
       </p>
 
       <p class="notice">
-        رفع صور المنتجات يتم مباشرة
-        إلى Supabase Storage
+        رفع صور المنتجات يتم مباشرة إلى Supabase Storage
         بعد التحقق من صلاحية المدير.
       </p>
-
     </div>
-
   `
 }
 
 async function productsPage(){
-
   const list=await getProducts();
 
   $('#page').innerHTML=`
-
     <div class="panel">
 
       <div class="panelHead">
 
         <div>
-
           <h3>إدارة المنتجات</h3>
-
           <p>
             أضف المنتج مع صورة أو عدة صور،
             وعدّل السعر والمخزون والحالة.
           </p>
-
         </div>
 
-        <button
-          class="primary"
-          id="addProductBtn">
-
+        <button class="primary" id="addProductBtn">
           + إضافة منتج
-
         </button>
 
       </div>
 
       <div class="tableWrap">
-
         <table>
 
           <tr>
@@ -737,39 +218,26 @@ async function productsPage(){
           </tr>
 
           ${list.map(x=>`
-
             <tr>
 
               <td>
                 ${
                   x.image_url
-                  ?`<img
-                      class="tableImg"
-                      src="${esc(x.image_url)}">`
+                  ?`<img class="tableImg" src="${esc(x.image_url)}">`
                   :'—'
                 }
               </td>
 
-              <td>
-                ${esc(x.name)}
-              </td>
+              <td>${esc(x.name)}</td>
 
               <td>
-                ${
-                  x.category==='women'
-                  ?'نساء'
-                  :'رجال'
-                }
+                ${x.category==='women'?'نساء':'رجال'}
               </td>
 
-              <td>
-                ${money(x.price)}
-              </td>
+              <td>${money(x.price)}</td>
 
               <td>
-                ${Number(
-                  x.discount_percent||0
-                )}%
+                ${Number(x.discount_percent||0)}%
               </td>
 
               <td>
@@ -781,58 +249,40 @@ async function productsPage(){
               </td>
 
               <td>
-
                 <button
                   class="primary mini"
                   data-edit="${x.id}">
-
                   تعديل
-
                 </button>
 
                 <button
                   class="danger"
                   data-delete="${x.id}">
-
                   حذف
-
                 </button>
-
               </td>
 
             </tr>
-
           `).join('')}
 
         </table>
-
       </div>
 
     </div>
-
   `;
 
-  $('#addProductBtn').onclick=
-    ()=>productModal();
+  $('#addProductBtn').onclick=()=>productModal();
 
   document
     .querySelectorAll('[data-edit]')
-    .forEach(
-      b=>
-        b.onclick=
-          ()=>productModal(
-            b.dataset.edit
-          )
+    .forEach(b=>
+      b.onclick=()=>productModal(b.dataset.edit)
     );
 
   document
     .querySelectorAll('[data-delete]')
-    .forEach(
-      b=>
-        b.onclick=
-          ()=>del(
-            b.dataset.delete
-          )
+    .forEach(b=>
+      b.onclick=()=>del(b.dataset.delete)
     )
 }
 
@@ -854,119 +304,85 @@ async function productModal(id){
 
   if(id){
 
-    const r=
-      await sb
-        .from('products')
-        .select('*')
-        .eq('id',id)
-        .single();
+    const r=await sb
+      .from('products')
+      .select('*')
+      .eq('id',id)
+      .single();
 
     if(r.error)
-      return alert(
-        r.error.message
-      );
+      return alert(r.error.message);
 
     p=r.data;
 
     try{
-
       p.image_urls=
         Array.isArray(p.image_urls)
         ?p.image_urls
-        :JSON.parse(
-            p.image_urls||'[]'
-          )
-
+        :JSON.parse(p.image_urls||'[]')
     }catch(_){
-
       p.image_urls=[]
-
     }
 
     if(
       !p.image_urls.length&&
       p.image_url
     )
-      p.image_urls=[
-        p.image_url
-      ]
+      p.image_urls=[p.image_url]
   }
 
   openModal(
-    id
-      ?'تعديل المنتج'
-      :'إضافة منتج',
-
+    id?'تعديل المنتج':'إضافة منتج',
     `
-
     <div class="form">
 
       <label>
-
         اسم المنتج
-
         <input
           id="pn"
           value="${esc(p.name)}">
-
       </label>
 
       <label>
-
         الفئة
 
         <select id="pc">
 
           <option
             value="men"
-            ${p.category==='men'
-              ?'selected'
-              :''}>
-
+            ${p.category==='men'?'selected':''}>
             رجال
-
           </option>
 
           <option
             value="women"
-            ${p.category==='women'
-              ?'selected'
-              :''}>
-
+            ${p.category==='women'?'selected':''}>
             نساء
-
           </option>
 
         </select>
-
       </label>
 
       <div class="grid2">
 
         <label>
-
           السعر
-
           <input
             id="pp"
             type="number"
             min="0"
             step="0.01"
             value="${p.price??''}">
-
         </label>
 
         <label>
-
           السعر القديم
-
           <input
             id="po"
             type="number"
             min="0"
             step="0.01"
             value="${p.old_price??''}">
-
         </label>
 
       </div>
@@ -974,46 +390,37 @@ async function productModal(id){
       <div class="grid2">
 
         <label>
-
           نسبة الخصم %
-
           <input
             id="pdsc"
             type="number"
             min="0"
             max="100"
             value="${p.discount_percent??0}">
-
         </label>
 
         <label>
-
           المخزون
-
           <input
             id="ps"
             type="number"
             min="0"
             step="1"
             value="${p.stock??0}">
-
         </label>
 
       </div>
 
       <label>
-
         المقاسات
 
         <input
           id="psz"
           value="${esc(p.sizes||'')}"
           placeholder="S, M, L, XL">
-
       </label>
 
       <label>
-
         صور المنتج
 
         <input
@@ -1026,29 +433,19 @@ async function productModal(id){
           يمكن رفع حتى 5 صور،
           كل صورة 5MB كحد أقصى.
         </small>
-
       </label>
 
-      <div
-        id="existingImgs"
-        class="existingImgs">
-
+      <div id="existingImgs" class="existingImgs">
         ${(p.image_urls||[])
-          .map(
-            u=>
-              `<img src="${esc(u)}">`
-          )
+          .map(u=>`<img src="${esc(u)}">`)
           .join('')}
-
       </div>
 
       <label>
-
         الوصف
 
         <textarea id="pdesc">
 ${esc(p.description||'')}</textarea>
-
       </label>
 
       <label class="check">
@@ -1056,9 +453,7 @@ ${esc(p.description||'')}</textarea>
         <input
           id="pactive"
           type="checkbox"
-          ${p.active!==false
-            ?'checked'
-            :''}>
+          ${p.active!==false?'checked':''}>
 
         المنتج ظاهر في المتجر
 
@@ -1068,11 +463,7 @@ ${esc(p.description||'')}</textarea>
         class="primary"
         id="saveProduct">
 
-        ${
-          id
-          ?'حفظ التعديلات'
-          :'إضافة المنتج'
-        }
+        ${id?'حفظ التعديلات':'إضافة المنتج'}
 
       </button>
 
@@ -1082,7 +473,6 @@ ${esc(p.description||'')}</textarea>
       </p>
 
     </div>
-
     `
   );
 
@@ -1092,103 +482,77 @@ ${esc(p.description||'')}</textarea>
 
 async function compressImage(file){
 
-  return new Promise(
-    (resolve,reject)=>{
+  return new Promise((resolve,reject)=>{
 
-      if(!file.type.startsWith('image/'))
-        return reject(
-          new Error('الملف ليس صورة')
-        );
+    if(!file.type.startsWith('image/'))
+      return reject(
+        new Error('الملف ليس صورة')
+      );
 
-      if(file.size>5*1024*1024)
-        return reject(
-          new Error(
-            'حجم الصورة أكبر من 5MB'
-          )
-        );
+    if(file.size>5*1024*1024)
+      return reject(
+        new Error('حجم الصورة أكبر من 5MB')
+      );
 
-      const img=new Image(),
-            url=
-              URL.createObjectURL(file);
+    const img=new Image(),
+          url=URL.createObjectURL(file);
 
-      img.onload=()=>{
+    img.onload=()=>{
 
-        const max=1600,
-              scale=
-                Math.min(
-                  1,
-                  max/
-                    Math.max(
-                      img.width,
-                      img.height
-                    )
-                );
-
-        const c=
-          document.createElement(
-            'canvas'
-          );
-
-        c.width=
-          Math.max(
-            1,
-            Math.round(
-              img.width*scale
-            )
-          );
-
-        c.height=
-          Math.max(
-            1,
-            Math.round(
-              img.height*scale
-            )
-          );
-
-        c.getContext('2d')
-          .drawImage(
-            img,
-            0,
-            0,
-            c.width,
-            c.height
-          );
-
-        c.toBlob(
-          b=>{
-
-            URL.revokeObjectURL(url);
-
-            b
-              ?resolve(b)
-              :reject(
-                new Error(
-                  'تعذر ضغط الصورة'
-                )
+      const max=1600,
+            scale=Math.min(
+              1,
+              max/Math.max(
+                img.width,
+                img.height
               )
+            );
 
-          },
-          'image/webp',
-          .86
-        )
-      };
+      const c=document.createElement('canvas');
 
-      img.onerror=()=>{
+      c.width=Math.max(
+        1,
+        Math.round(img.width*scale)
+      );
 
-        URL.revokeObjectURL(url);
+      c.height=Math.max(
+        1,
+        Math.round(img.height*scale)
+      );
 
-        reject(
-          new Error(
-            'تعذر قراءة الصورة'
-          )
-        )
+      c.getContext('2d')
+        .drawImage(
+          img,
+          0,
+          0,
+          c.width,
+          c.height
+        );
 
-      };
+      c.toBlob(
+        b=>{
+          URL.revokeObjectURL(url);
 
-      img.src=url
+          b
+            ?resolve(b)
+            :reject(
+              new Error('تعذر ضغط الصورة')
+            )
+        },
+        'image/webp',
+        .86
+      )
+    };
 
-    }
-  )
+    img.onerror=()=>{
+      URL.revokeObjectURL(url);
+      reject(
+        new Error('تعذر قراءة الصورة')
+      )
+    };
+
+    img.src=url
+  })
 }
 
 async function uploadImages(files){
@@ -1196,31 +560,23 @@ async function uploadImages(files){
   const urls=[];
 
   for(
-    const file
-    of Array.from(files).slice(0,5)
+    const file of Array.from(files).slice(0,5)
   ){
 
-    const blob=
-      await compressImage(file),
-
-      name=
-        `${crypto.randomUUID()}.webp`,
-
-      path=
-        `products/${name}`,
-
-      r=
-        await sb
-          .storage
-          .from('product-images')
-          .upload(
-            path,
-            blob,
-            {
-              contentType:'image/webp',
-              upsert:false
-            }
-          );
+    const blob=await compressImage(file),
+          name=`${crypto.randomUUID()}.webp`,
+          path=`products/${name}`,
+          r=await sb
+            .storage
+            .from('product-images')
+            .upload(
+              path,
+              blob,
+              {
+                contentType:'image/webp',
+                upsert:false
+              }
+            );
 
     if(r.error)
       throw r.error;
@@ -1242,43 +598,19 @@ async function saveProduct(id,old){
 
   const m=$('#uploadMsg');
 
-  m.textContent=
-    'جاري الحفظ...';
+  m.textContent='جاري الحفظ...';
 
-  const name=
-          $('#pn').value.trim(),
-
-        category=
-          $('#pc').value,
-
-        price=
-          Number(
-            $('#pp').value
-          ),
-
-        old_price=
-          Number(
-            $('#po').value||0
-          ),
-
-        discount_percent=
-          Number(
-            $('#pdsc').value||0
-          ),
-
-        stock=
-          Number(
-            $('#ps').value
-          ),
-
-        sizes=
-          $('#psz').value.trim(),
-
-        description=
-          $('#pdesc').value.trim(),
-
-        active=
-          $('#pactive').checked;
+  const name=$('#pn').value.trim(),
+        category=$('#pc').value,
+        price=Number($('#pp').value),
+        old_price=Number($('#po').value||0),
+        discount_percent=Number(
+          $('#pdsc').value||0
+        ),
+        stock=Number($('#ps').value),
+        sizes=$('#psz').value.trim(),
+        description=$('#pdesc').value.trim(),
+        active=$('#pactive').checked;
 
   if(
     !name||
@@ -1287,31 +619,24 @@ async function saveProduct(id,old){
     discount_percent<0||
     discount_percent>100
   ){
-
-    m.textContent=
-      'تحقق من بيانات المنتج.';
-
+    m.textContent='تحقق من بيانات المنتج.';
     return
   }
 
-  let imgs=
-    old.image_urls||[];
+  let imgs=old.image_urls||[];
 
   try{
 
-    const files=
-      $('#pfiles').files;
+    const files=$('#pfiles').files;
 
     if(files.length){
 
-      m.textContent=
-        'جاري رفع الصور...';
+      m.textContent='جاري رفع الصور...';
 
       imgs=[
         ...imgs,
         ...await uploadImages(files)
       ].slice(-5)
-
     }
 
   }catch(e){
@@ -1338,28 +663,246 @@ async function saveProduct(id,old){
   };
 
   const r=id
-
     ?await sb
       .from('products')
       .update(data)
- async function messagesPage(){
+      .eq('id',id)
+            :await sb
+      .from('products')
+      .insert(data);
 
-  const r=
-    await sb
-      .from('messages')
-      .select('*')
-      .order(
-        'created_at',
-        {ascending:false}
-      );
+  if(r.error){
+    m.textContent=r.error.message;
+    return
+  }
+
+  closeModal();
+  await productsPage()
+}
+
+async function del(id){
+
+  if(!confirm('حذف المنتج نهائيًا؟'))
+    return;
+
+  const r=await sb
+    .from('products')
+    .delete()
+    .eq('id',id);
 
   if(r.error)
-    return showError(
-      r.error.message
+    alert(r.error.message);
+  else
+    await productsPage()
+}
+
+async function ordersPage(){
+
+  const r=await sb
+    .from('orders')
+    .select('*')
+    .order(
+      'created_at',
+      {ascending:false}
     );
 
-  $('#page').innerHTML=`
+  if(r.error)
+    return showError(r.error.message);
 
+  $('#page').innerHTML=`
+    <div class="panel">
+
+      <h3>الطلبات</h3>
+
+      <div class="tableWrap">
+
+        <table>
+
+          <tr>
+            <th>العميل</th>
+            <th>الهاتف</th>
+            <th>العنوان</th>
+            <th>المجموع</th>
+            <th>الحالة</th>
+            <th>التاريخ</th>
+          </tr>
+
+          ${(r.data||[]).map(o=>`
+
+            <tr>
+
+              <td>
+                ${esc(o.customer_name)}
+              </td>
+
+              <td>
+                ${esc(o.phone||'—')}
+              </td>
+
+              <td class="messageCell">
+                ${esc(o.address||'—')}
+              </td>
+
+              <td>
+                ${money(o.total)}
+              </td>
+
+              <td>
+
+                <select
+                  data-status="${o.id}">
+
+                  ${
+                    [
+                      'new',
+                      'confirmed',
+                      'preparing',
+                      'shipped',
+                      'delivered',
+                      'cancelled'
+                    ]
+                    .map(s=>`
+                      <option
+                        value="${s}"
+                        ${o.status===s?'selected':''}>
+                        ${s}
+                      </option>
+                    `)
+                    .join('')
+                  }
+
+                </select>
+
+              </td>
+
+              <td>
+                ${
+                  o.created_at
+                  ?new Date(o.created_at)
+                    .toLocaleString('ar-DZ')
+                  :'—'
+                }
+              </td>
+
+            </tr>
+
+          `).join('')}
+
+        </table>
+
+      </div>
+
+    </div>
+  `;
+
+  document
+    .querySelectorAll('[data-status]')
+    .forEach(
+      s=>
+        s.onchange=()=>
+          updateStatus(
+            s.dataset.status,
+            s.value
+          )
+    )
+}
+
+async function updateStatus(id,status){
+
+  const r=await sb
+    .from('orders')
+    .update({status})
+    .eq('id',id);
+
+  if(r.error)
+    alert(r.error.message)
+}
+
+async function customersPage(){
+
+  const r=await sb
+    .from('profiles')
+    .select('*')
+    .order(
+      'created_at',
+      {ascending:false}
+    );
+
+  if(r.error)
+    return showError(r.error.message);
+
+  $('#page').innerHTML=`
+    <div class="panel">
+
+      <h3>العملاء</h3>
+
+      <div class="tableWrap">
+
+        <table>
+
+          <tr>
+            <th>الاسم</th>
+            <th>البريد</th>
+            <th>الهاتف / WhatsApp</th>
+            <th>الدور</th>
+            <th>التاريخ</th>
+          </tr>
+
+          ${(r.data||[]).map(x=>`
+
+            <tr>
+
+              <td>
+                ${esc(x.full_name||'—')}
+              </td>
+
+              <td>
+                ${esc(x.email||'—')}
+              </td>
+
+              <td>
+                ${esc(x.phone||'—')}
+              </td>
+
+              <td>
+                ${esc(x.role||'customer')}
+              </td>
+
+              <td>
+                ${
+                  x.created_at
+                  ?new Date(x.created_at)
+                    .toLocaleDateString('ar-DZ')
+                  :'—'
+                }
+              </td>
+
+            </tr>
+
+          `).join('')}
+
+        </table>
+
+      </div>
+
+    </div>
+  `;
+}
+
+async function messagesPage(){
+
+  const r=await sb
+    .from('messages')
+    .select('*')
+    .order(
+      'created_at',
+      {ascending:false}
+    );
+
+  if(r.error)
+    return showError(r.error.message);
+
+  $('#page').innerHTML=`
     <div class="panel">
 
       <h3>رسائل العملاء</h3>
@@ -1376,8 +919,7 @@ async function saveProduct(id,old){
             <th>الحالة</th>
           </tr>
 
-          ${(r.data||[])
-            .map(x=>`
+          ${(r.data||[]).map(x=>`
 
             <tr>
 
@@ -1399,37 +941,24 @@ async function saveProduct(id,old){
 
               <td>
 
-                <select
-                  data-msg="${x.id}">
+                <select data-msg="${x.id}">
 
                   <option
                     value="unread"
-                    ${x.status==='unread'
-                      ?'selected'
-                      :''}>
-
+                    ${x.status==='unread'?'selected':''}>
                     غير مقروء
-
                   </option>
 
                   <option
                     value="read"
-                    ${x.status==='read'
-                      ?'selected'
-                      :''}>
-
+                    ${x.status==='read'?'selected':''}>
                     مقروء
-
                   </option>
 
                   <option
                     value="closed"
-                    ${x.status==='closed'
-                      ?'selected'
-                      :''}>
-
+                    ${x.status==='closed'?'selected':''}>
                     مغلق
-
                   </option>
 
                 </select>
@@ -1445,7 +974,6 @@ async function saveProduct(id,old){
       </div>
 
     </div>
-
   `;
 
   document
@@ -1454,31 +982,24 @@ async function saveProduct(id,old){
       s=>
         s.onchange=async()=>{
 
-          const r=
-            await sb
-              .from('messages')
-              .update({
-                status:s.value
-              })
-              .eq(
-                'id',
-                s.dataset.msg
-              );
+          const r=await sb
+            .from('messages')
+            .update({
+              status:s.value
+            })
+            .eq('id',s.dataset.msg);
 
           if(r.error)
             alert(r.error.message);
-
         }
     );
 }
 
 async function inventoryPage(){
 
-  const list=
-    await getProducts();
+  const list=await getProducts();
 
   $('#page').innerHTML=`
-
     <div class="panel">
 
       <h3>المخزون</h3>
@@ -1533,28 +1054,23 @@ async function inventoryPage(){
       </div>
 
     </div>
-
   `;
 }
 
 async function couponsPage(){
 
-  const r=
-    await sb
-      .from('coupons')
-      .select('*')
-      .order(
-        'created_at',
-        {ascending:false}
-      );
-
-  if(r.error)
-    return showError(
-      r.error.message
+  const r=await sb
+    .from('coupons')
+    .select('*')
+    .order(
+      'created_at',
+      {ascending:false}
     );
 
-  $('#page').innerHTML=`
+  if(r.error)
+    return showError(r.error.message);
 
+  $('#page').innerHTML=`
     <div class="panel">
 
       <div class="panelHead">
@@ -1564,9 +1080,7 @@ async function couponsPage(){
         <button
           class="primary"
           id="addCoupon">
-
           + كوبون
-
         </button>
 
       </div>
@@ -1582,8 +1096,7 @@ async function couponsPage(){
             <th>انتهاء</th>
           </tr>
 
-          ${(r.data||[])
-            .map(x=>`
+          ${(r.data||[]).map(x=>`
 
             <tr>
 
@@ -1600,9 +1113,7 @@ async function couponsPage(){
               </td>
 
               <td>
-                ${esc(
-                  x.expires_at||'—'
-                )}
+                ${esc(x.expires_at||'—')}
               </td>
 
             </tr>
@@ -1614,7 +1125,6 @@ async function couponsPage(){
       </div>
 
     </div>
-
   `;
 
   $('#addCoupon').onclick=()=>{
@@ -1626,9 +1136,7 @@ function couponModal(){
 
   openModal(
     'كوبون جديد',
-
     `
-
     <div class="form">
 
       <input
@@ -1649,32 +1157,25 @@ function couponModal(){
       <button
         class="primary"
         id="saveCoupon">
-
         حفظ
-
       </button>
 
     </div>
-
     `
   );
 
-  $('#saveCoupon').onclick=
-    addCoupon;
+  $('#saveCoupon').onclick=addCoupon;
 }
 
 async function addCoupon(){
 
-  const code=
-    $('#cc')
-      .value
-      .trim()
-      .toUpperCase();
+  const code=$('#cc')
+    .value
+    .trim()
+    .toUpperCase();
 
   const discount_percent=
-    Number(
-      $('#cd').value||0
-    );
+    Number($('#cd').value||0);
 
   const expires_at=
     $('#ce').value||null;
@@ -1684,26 +1185,19 @@ async function addCoupon(){
     discount_percent<0||
     discount_percent>100
   ){
-
-    return alert(
-      'بيانات غير صحيحة'
-    );
-
+    return alert('بيانات غير صحيحة');
   }
 
-  const r=
-    await sb
-      .from('coupons')
-      .insert({
-        code,
-        discount_percent,
-        expires_at
-      });
+  const r=await sb
+    .from('coupons')
+    .insert({
+      code,
+      discount_percent,
+      expires_at
+    });
 
   if(r.error)
-    return alert(
-      r.error.message
-    );
+    return alert(r.error.message);
 
   closeModal();
 
@@ -1728,13 +1222,6 @@ function settingsPage(){
         Publishable/Anon key فقط في المتصفح.
         لا تضع Secret / Service Role key
         داخل GitHub.
-
-        <br><br>
-
-        <b>MFA:</b>
-
-        حسابات الإدارة مطالبة بالتحقق
-        بخطوتين باستخدام تطبيق Authenticator.
 
         <br><br>
 
@@ -1789,22 +1276,16 @@ function closeModal(){
 $('#loginBtn').onclick=login;
 
 $('#password').onkeydown=e=>{
-
   if(e.key==='Enter')
     login();
-
 };
 
 $('#logout').onclick=async()=>{
-
   await sb?.auth.signOut();
-
   location.reload();
-
 };
 
-$('#modalClose').onclick=
-  closeModal;
+$('#modalClose').onclick=closeModal;
 
 document
   .querySelectorAll('.nav')
@@ -1815,18 +1296,12 @@ document
         document
           .querySelectorAll('.nav')
           .forEach(
-            x=>
-              x.classList.remove(
-                'active'
-              )
+            x=>x.classList.remove('active')
           );
 
         b.classList.add('active');
 
-        await show(
-          b.dataset.page
-        );
-
+        await show(b.dataset.page);
       }
   );
 
@@ -1834,131 +1309,17 @@ if(sb){
 
   sb.auth
     .getSession()
-    .then(
-      ({data})=>{
-
-        if(data?.session)
-          openAdmin();
-
-      }
-    );
-
-  sb.auth
-    .onAuthStateChange(
-      event=>{
-
-        if(event==='SIGNED_OUT')
-          location.reload();
-
-      }
-    );
-
-}else{
-
-  msg(
-    'تعذر قراءة config.js'
-  );
-
-}
-
-window.NBYN_ADMIN={
-  show
-};
-
-})();
-async function login(){
-
-  if(!sb)
-    return msg('تعذر الاتصال بـ Supabase.');
-
-  const email =
-    $('#email').value.trim();
-
-  const password =
-    $('#password').value;
-
-  if(!email || !password)
-    return msg('أدخل البريد وكلمة المرور.');
-
-  msg('جاري تسجيل الدخول...');
-
-  const r =
-    await sb.auth.signInWithPassword({
-      email,
-      password
-    });
-
-  if(r.error)
-    return msg(r.error.message);
-
-  msg('');
-
-  await openAdmin();
-}
-
-
-$('#loginBtn').onclick = login;
-
-
-$('#password').onkeydown = e => {
-
-  if(e.key === 'Enter')
-    login();
-
-};
-
-
-$('#logout').onclick = async () => {
-
-  await sb?.auth.signOut();
-
-  location.reload();
-
-};
-
-
-$('#modalClose').onclick = closeModal;
-
-
-document
-  .querySelectorAll('.nav')
-  .forEach(
-    b =>
-      b.onclick = async () => {
-
-        document
-          .querySelectorAll('.nav')
-          .forEach(
-            x =>
-              x.classList.remove('active')
-          );
-
-        b.classList.add('active');
-
-        await show(
-          b.dataset.page
-        );
-
-      }
-  );
-
-
-if(sb){
-
-  sb.auth
-    .getSession()
-    .then(({data}) => {
+    .then(({data})=>{
 
       if(data?.session)
-        openAdmin();
+        boot();
 
     });
 
-
   sb.auth
-    .onAuthStateChange(event => {
+    .onAuthStateChange(event=>{
 
-      if(event === 'SIGNED_OUT')
+      if(event==='SIGNED_OUT')
         location.reload();
 
     });
@@ -1969,12 +1330,8 @@ if(sb){
 
 }
 
-
-window.NBYN_ADMIN = {
-
+window.NBYN_ADMIN={
   show
-
 };
-
 
 })();
