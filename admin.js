@@ -221,7 +221,7 @@ async function openAdmin(){
     $('#login')?.classList.remove('hidden');
     $('#app')?.classList.add('hidden');
     removeMfa();
-    return
+    return;
   }
 
   const p=await sb
@@ -235,71 +235,64 @@ async function openAdmin(){
     p.data?.role!=='admin'
   ){
     await sb.auth.signOut();
-    return msg('هذا الحساب ليس مديراً.')
+    return msg('هذا الحساب ليس مديراً.');
   }
 
   const a=await sb.auth.mfa.getAuthenticatorAssuranceLevel();
 
   if(a.error){
-    await sb.auth.signOut();
-    return msg(a.error.message)
+    return msg(a.error.message);
   }
 
-  if(
-    a.data?.currentLevel==='aal1'&&
-    a.data?.nextLevel==='aal2'
-  ){
-    const f=await verifiedFactor();
+  const f=await verifiedFactor();
 
+  /*
+   * لا يوجد MFA بعد:
+   * نسمح للمدير بإعداد Authenticator.
+   */
+  if(
+    a.data?.currentLevel==='aal1' &&
+    a.data?.nextLevel==='aal1' &&
+    !f
+  ){
     $('#login')?.classList.add('hidden');
     $('#app')?.classList.add('hidden');
 
-    return f
-      ?challengeMfa(f)
-      :enrollMfa()
+    return enrollMfa();
   }
 
-  if(a.data?.currentLevel!=='aal2'){
-    await sb.auth.signOut();
+  /*
+   * يوجد MFA لكن لم يتم إدخال الرمز بعد.
+   */
+  if(
+    a.data?.currentLevel==='aal1' &&
+    f
+  ){
+    $('#login')?.classList.add('hidden');
+    $('#app')?.classList.add('hidden');
 
-    return msg(
-      'يجب إكمال التحقق بخطوتين للدخول إلى لوحة الإدارة.'
-    )
+    return challengeMfa(f);
   }
 
-  removeMfa();
+  /*
+   * تم التحقق بنجاح.
+   */
+  if(a.data?.currentLevel==='aal2'){
 
-  $('#login')?.classList.add('hidden');
-  $('#app')?.classList.remove('hidden');
+    removeMfa();
 
-  await show('dashboard')
+    $('#login')?.classList.add('hidden');
+    $('#app')?.classList.remove('hidden');
+
+    await show('dashboard');
+
+    return;
+  }
+
+  return msg(
+    'يجب إكمال التحقق بخطوتين للدخول إلى لوحة الإدارة.'
+  );
 }
-
-async function login(){
-  if(!sb)
-    return msg('تعذر الاتصال بـ Supabase.');
-
-  const email=$('#email').value.trim(),
-        password=$('#password').value;
-
-  if(!email||!password)
-    return msg('أدخل البريد وكلمة المرور.');
-
-  msg('جاري تسجيل الدخول...');
-
-  const r=await sb.auth.signInWithPassword({
-    email,
-    password
-  });
-
-  if(r.error)
-    return msg(r.error.message);
-
-  msg('');
-
-  await openAdmin()
-}
-
 async function show(page){
   const t={
     dashboard:'لوحة التحكم',
