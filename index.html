@@ -41,7 +41,17 @@
 <section id="about" class="about section"><div><span class="eyebrow">N BY N</span><h2>الفخامة<br>في كل تفصيل.</h2></div><p>متجر N by N يجمع بين الهوية الراقية وتجربة شراء سهلة وآمنة. المنتجات والأسعار والمخزون والطلبات والعملاء تتم إدارتها من لوحة تحكم واحدة.</p></section>
 <section id="contact" class="section contact"><div><span class="eyebrow">CUSTOMER SERVICE</span><h2>تواصل معنا</h2><p>نحن هنا لمساعدتك في اختيار المنتج أو متابعة طلبك.</p></div><form id="contactForm"><input name="name" placeholder="الاسم الكامل" autocomplete="name" required><input name="email" type="email" placeholder="البريد الإلكتروني" autocomplete="email" required><input name="phone" type="tel" placeholder="رقم الهاتف / WhatsApp" autocomplete="tel" required><textarea name="message" placeholder="رسالتك" required></textarea><button class="goldBtn" type="submit">إرسال الرسالة</button></form></section>
 </main>
-<footer><img src="./logo.jpg?v=20260930" alt="N by N"><div><b>N BY N — ONLINE STORE</b><p>© 2026 N by N. جميع الحقوق محفوظة.</p></div><a href="./admin.html">لوحة الإدارة</a></footer>
+<footer>
+  <img src="./logo.jpg?v=20260930" alt="N by N">
+  <div>
+    <b>N BY N</b>
+    <p>N BY N FOR ONLINE TRADING</p>
+    <p>دولة قطر · رقم المنشأة: 17-3174-69</p>
+    <p>71578241 · 66773373</p>
+    <p>© 2026 N BY N FOR ONLINE TRADING. جميع الحقوق محفوظة.</p>
+  </div>
+  <a href="./admin.html">لوحة الإدارة</a>
+</footer>
 <aside id="cart" class="drawer" aria-hidden="true"><div class="drawerHead"><h3>سلة التسوق</h3><button id="closeCart">×</button></div><div id="cartItems"></div><div class="sum"><span>المجموع</span><strong id="cartTotal">0 DA</strong></div><button id="checkout" class="goldBtn full">إتمام الطلب</button></aside>
 <div id="account" class="modal" aria-hidden="true"><div class="modalBox"><button class="close" data-close="account">×</button><span class="eyebrow">N BY N ACCOUNT</span><h2>حسابك</h2><div id="signupFields"><input id="authName" placeholder="الاسم الكامل" autocomplete="name"><input id="authPhone" type="tel" placeholder="رقم الهاتف / WhatsApp" autocomplete="tel" inputmode="tel"></div><input id="authEmail" type="email" placeholder="البريد الإلكتروني" autocomplete="email"><input id="authPass" type="password" placeholder="كلمة المرور (6 أحرف على الأقل)" autocomplete="current-password"><button id="signIn" class="goldBtn full">تسجيل الدخول</button><button id="signUp" class="outline full">إنشاء حساب جديد</button><button id="myOrders" class="outline full hidden">📦 طلباتي</button><button id="signOut" class="outline full hidden">تسجيل الخروج</button><p id="authMsg" class="message"></p></div></div>
 <div id="checkoutModal" class="modal" aria-hidden="true"><div class="modalBox"><button class="close" data-close="checkoutModal">×</button><span class="eyebrow">CHECKOUT</span><h2>بيانات التوصيل</h2><p class="muted">أدخل رقمك وعنوانك لإرسال الطلب.</p><input id="checkoutName" placeholder="الاسم الكامل" autocomplete="name"><input id="checkoutPhone" type="tel" placeholder="رقم الهاتف / WhatsApp" autocomplete="tel"><textarea id="checkoutAddress" placeholder="العنوان بالتفصيل"></textarea><input id="checkoutCoupon" placeholder="رمز الخصم (اختياري)" autocomplete="off"><button id="applyCoupon" class="outline full" type="button">تطبيق الكوبون</button><p id="couponMsg" class="message"></p><button id="placeOrder" class="goldBtn full">تأكيد الطلب</button><p id="checkoutMsg" class="message"></p></div></div>
