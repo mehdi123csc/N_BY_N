@@ -2,7 +2,7 @@
 'use strict';
 const cfg=window.NBYN_CONFIG||{},lib=window.supabase;
 const sb=lib&&cfg.SUPABASE_URL&&cfg.SUPABASE_KEY?lib.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_KEY):null;
-const $=s=>document.querySelector(s),money=n=>Number(n||0).toLocaleString('fr-FR')+' DA';
+const $=s=>document.querySelector(s),money=n=>Number(n||0).toLocaleString('fr-FR')+' '+(cfg.CURRENCY||'QAR');
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 function msg(t){if($('#loginMsg'))$('#loginMsg').textContent=t||''}
 

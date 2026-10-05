@@ -4,15 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#5a0c25">
-<meta name="description" content="N by N — متجر أزياء فاخر للرجال والنساء في دولة قطر. اكتشف أحدث المنتجات والعروض.">
-<meta name="robots" content="index,follow">
-<meta property="og:title" content="N by N — Online Store">
-<meta property="og:description" content="متجر N by N للأزياء الرجالية والنسائية في قطر.">
-<meta property="og:type" content="website">
-<meta property="og:image" content="./logo.jpg">
-<meta name="theme-color" content="#5a0c25">
-<link rel="icon" type="image/jpeg" href="./logo.jpg">
-<link rel="canonical" href="https://n-by-n.pages.dev/">
+<meta name="description" content="N by N — متجر أزياء فاخر للرجال والنساء">
 <title>N by N — Online Store</title>
 <link rel="stylesheet" href="./style-v2.css?v=20260930">
 </head>
@@ -58,11 +50,11 @@
     <p>71578241 · 66773373</p>
     <p>© 2026 N BY N FOR ONLINE TRADING. جميع الحقوق محفوظة.</p>
   </div>
-  
+  <a href="./admin.html">لوحة الإدارة</a>
 </footer>
 <aside id="cart" class="drawer" aria-hidden="true"><div class="drawerHead"><h3>سلة التسوق</h3><button id="closeCart">×</button></div><div id="cartItems"></div><div class="sum"><span>المجموع</span><strong id="cartTotal">0 QAR</strong></div><button id="checkout" class="goldBtn full">إتمام الطلب</button></aside>
-<div id="account" class="modal" aria-hidden="true"><div class="modalBox"><button class="close" data-close="account">×</button><span class="eyebrow">N BY N ACCOUNT</span><h2>حسابك</h2><div id="signupFields"><input id="authName" placeholder="الاسم الكامل" autocomplete="name"><input id="authPhone" type="tel" placeholder="رقم الهاتف / WhatsApp" autocomplete="tel" inputmode="tel"></div><input id="authEmail" type="email" placeholder="البريد الإلكتروني" autocomplete="email"><input id="authPass" type="password" placeholder="كلمة المرور (8 أحرف على الأقل)" autocomplete="current-password"><input id="authPassConfirm" type="password" placeholder="تأكيد كلمة المرور" autocomplete="new-password"><button id="forgotPassword" class="outline full" type="button">نسيت كلمة المرور؟</button><div id="passwordResetBox" class="passwordResetBox hidden"><input id="newPassword" type="password" placeholder="كلمة المرور الجديدة (8 أحرف على الأقل)" autocomplete="new-password"><input id="newPasswordConfirm" type="password" placeholder="تأكيد كلمة المرور الجديدة" autocomplete="new-password"><button id="resetPasswordBtn" class="goldBtn full" type="button">حفظ كلمة المرور الجديدة</button></div><button id="signIn" class="goldBtn full">تسجيل الدخول</button><button id="signUp" class="outline full">إنشاء حساب جديد</button><button id="myOrders" class="outline full hidden">📦 طلباتي</button><button id="signOut" class="outline full hidden">تسجيل الخروج</button><p id="authMsg" class="message"></p></div></div>
-<div id="checkoutModal" class="modal" aria-hidden="true"><div class="modalBox"><button class="close" data-close="checkoutModal">×</button><span class="eyebrow">CHECKOUT</span><h2>بيانات التوصيل</h2><p class="muted">أدخل رقمك وعنوانك لإرسال الطلب.</p><input id="checkoutName" placeholder="الاسم الكامل" autocomplete="name"><input id="checkoutPhone" type="tel" placeholder="رقم الهاتف / WhatsApp" autocomplete="tel"><textarea id="checkoutAddress" placeholder="العنوان بالتفصيل"></textarea><input id="checkoutCoupon" placeholder="رمز الخصم (اختياري)" autocomplete="off"><button id="applyCoupon" class="outline full" type="button">تطبيق الكوبون</button><p id="couponMsg" class="message"></p><div id="checkoutSummary" class="checkoutSummary"><div><span>المجموع الفرعي</span><strong id="checkoutSubtotal">0 QAR</strong></div><div><span>الخصم</span><strong id="checkoutDiscount">0 QAR</strong></div><div class="grand"><span>الإجمالي بعد الخصم</span><strong id="checkoutTotal">0 QAR</strong></div></div><button id="placeOrder" class="goldBtn full">تأكيد الطلب</button><p id="checkoutMsg" class="message"></p></div></div>
+<div id="account" class="modal" aria-hidden="true"><div class="modalBox"><button class="close" data-close="account">×</button><span class="eyebrow">N BY N ACCOUNT</span><h2>حسابك</h2><div id="signupFields"><input id="authName" placeholder="الاسم الكامل" autocomplete="name"><input id="authPhone" type="tel" placeholder="رقم الهاتف / WhatsApp" autocomplete="tel" inputmode="tel"></div><input id="authEmail" type="email" placeholder="البريد الإلكتروني" autocomplete="email"><input id="authPass" type="password" placeholder="كلمة المرور (6 أحرف على الأقل)" autocomplete="current-password"><button id="signIn" class="goldBtn full">تسجيل الدخول</button><button id="signUp" class="outline full">إنشاء حساب جديد</button><button id="myOrders" class="outline full hidden">📦 طلباتي</button><button id="signOut" class="outline full hidden">تسجيل الخروج</button><p id="authMsg" class="message"></p></div></div>
+<div id="checkoutModal" class="modal" aria-hidden="true"><div class="modalBox"><button class="close" data-close="checkoutModal">×</button><span class="eyebrow">CHECKOUT</span><h2>بيانات التوصيل</h2><p class="muted">أدخل رقمك وعنوانك لإرسال الطلب.</p><input id="checkoutName" placeholder="الاسم الكامل" autocomplete="name"><input id="checkoutPhone" type="tel" placeholder="رقم الهاتف / WhatsApp" autocomplete="tel"><textarea id="checkoutAddress" placeholder="العنوان بالتفصيل"></textarea><input id="checkoutCoupon" placeholder="رمز الخصم (اختياري)" autocomplete="off"><button id="applyCoupon" class="outline full" type="button">تطبيق الكوبون</button><p id="couponMsg" class="message"></p><button id="placeOrder" class="goldBtn full">تأكيد الطلب</button><p id="checkoutMsg" class="message"></p></div></div>
 <div id="ordersModal" class="modal" aria-hidden="true"><div class="modalBox"><button class="close" data-close="ordersModal">×</button><span class="eyebrow">MY ORDERS</span><h2>طلباتي</h2><div id="ordersBody"></div></div></div>
 <div id="productModal" class="modal" aria-hidden="true"><div class="modalBox productDetail"><button class="close" data-close="productModal">×</button><div id="productDetailBody"></div></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
