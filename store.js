@@ -1033,152 +1033,200 @@
   }
 
 
-  function authMessage(error) {
-    const m = String(error?.message || error || '');
-    const map = [
-      [/invalid login credentials/i, 'البريد الإلكتروني أو كلمة المرور غير صحيحة.'],
-      [/email not confirmed/i, 'يرجى تأكيد بريدك الإلكتروني أولًا.'],
-      [/user already registered/i, 'هذا البريد الإلكتروني مسجل مسبقًا. حاول تسجيل الدخول أو استعادة كلمة المرور.'],
-      [/password.*characters/i, 'يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل.'],
-      [/rate limit/i, 'تمت محاولات كثيرة. حاول مرة أخرى بعد قليل.']
-    ];
-    return map.find(([re]) => re.test(m))?.[1] || m || 'حدث خطأ. حاول مرة أخرى.';
+
+  function getResetRedirectUrl() {
+    return window.location.origin + window.location.pathname;
   }
 
-  function setAuthMode(mode) {
-    const signup = mode === 'signup';
-    $('#signupFields')?.classList.toggle('hidden', !signup);
-    $('#confirmPassWrap')?.classList.toggle('hidden', !signup);
-    $('#signIn')?.classList.toggle('hidden', signup);
-    $('#signUp')?.classList.toggle('hidden', !signup);
-    $('#forgotPassword')?.classList.toggle('hidden', signup);
-  $('#authModeToggle')?.classList.toggle('hidden', false);
-  if ($('#authModeToggle')) $('#authModeToggle').textContent = signup ? 'لديك حساب؟ تسجيل الدخول' : 'ليس لديك حساب؟ إنشاء حساب جديد';
+  async function requestPasswordReset() {
+    const msg = $('#authMsg');
+    const email = $('#authEmail')?.value.trim();
+
+    if (!email) {
+      msg.textContent = 'أدخل بريدك الإلكتروني أولًا.';
+      $('#authEmail')?.focus();
+      return;
+    }
+
+    if (!sb) {
+      msg.textContent = 'Supabase غير متصل.';
+      return;
+    }
+
+    msg.textContent = 'جاري إرسال رابط إعادة تعيين كلمة المرور...';
+
+    const r = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: getResetRedirectUrl()
+    });
+
+    if (r.error) {
+      console.error(r.error);
+      msg.textContent = r.error.message || 'تعذر إرسال رابط إعادة التعيين.';
+      return;
+    }
+
+    msg.textContent = 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني. افتح أحدث رسالة.';
+  }
+
+  async function saveNewPassword() {
+    const msg = $('#resetPasswordMsg');
+    const password = $('#newPassword')?.value || '';
+    const confirm = $('#confirmPassword')?.value || '';
+
+    if (password.length < 6) {
+      msg.textContent = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل.';
+      return;
+    }
+
+    if (password !== confirm) {
+      msg.textContent = 'كلمتا المرور غير متطابقتين.';
+      return;
+    }
+
+    if (!sb) {
+      msg.textContent = 'Supabase غير متصل.';
+      return;
+    }
+
+    const { data: sessionData } = await sb.auth.getSession();
+
+    if (!sessionData?.session) {
+      msg.textContent = 'رابط إعادة التعيين غير صالح أو انتهت صلاحيته. اطلب رابطًا جديدًا.';
+      return;
+    }
+
+    msg.textContent = 'جاري تحديث كلمة المرور...';
+
+    const r = await sb.auth.updateUser({ password });
+
+    if (r.error) {
+      console.error(r.error);
+      msg.textContent = r.error.message || 'تعذر تغيير كلمة المرور.';
+      return;
+    }
+
+    $('#newPassword').value = '';
+    $('#confirmPassword').value = '';
+    msg.textContent = 'تم تغيير كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة.';
+
+    setTimeout(() => {
+      close('resetPasswordModal');
+      $('#authMsg').textContent = 'تم تغيير كلمة المرور بنجاح.';
+      open('account');
+    }, 1200);
   }
 
   async function signIn() {
-    const msg = $('#authMsg');
-    const email = $('#authEmail').value.trim();
-    const password = $('#authPass').value;
 
-    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-      msg.textContent = 'أدخل بريدًا إلكترونيًا صحيحًا.';
+    const msg =
+      $('#authMsg');
+
+    const email =
+      $('#authEmail')
+        .value
+        .trim();
+
+    const password =
+      $('#authPass')
+        .value;
+
+    if (
+      !email ||
+      !password
+    ) {
+
+      msg.textContent =
+        'أدخل البريد الإلكتروني وكلمة المرور.';
+
       return;
     }
-    if (password.length < 8) {
-      msg.textContent = 'كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل.';
-      return;
-    }
 
-    $('#signIn').disabled = true;
-    msg.textContent = 'جاري تسجيل الدخول...';
-    const r = await sb.auth.signInWithPassword({ email, password });
-    $('#signIn').disabled = false;
+    const r =
+      await sb.auth
+        .signInWithPassword({
+          email,
+          password
+        });
 
-    if (r.error) {
-      msg.textContent = authMessage(r.error);
-      return;
-    }
-    msg.textContent = 'تم تسجيل الدخول بنجاح.';
-    updateAuth(r.data.session);
+    msg.textContent =
+      r.error
+        ? r.error.message
+        : 'تم تسجيل الدخول بنجاح.';
+
+    if (!r.error)
+      updateAuth(
+        r.data.session
+      );
   }
+
 
   async function signUp() {
-    const msg = $('#authMsg');
-    const name = $('#authName').value.trim();
-    const phone = $('#authPhone').value.trim();
-    const email = $('#authEmail').value.trim();
-    const password = $('#authPass').value;
-    const confirm = $('#authPassConfirm').value;
 
-    if (!name || name.length < 2) {
-      msg.textContent = 'أدخل الاسم الكامل.';
-      return;
-    }
-    if (phone.replace(/\D/g, '').length < 8) {
-      msg.textContent = 'أدخل رقم هاتف صحيحًا.';
-      return;
-    }
-    if (!/^\S+@\S+\.\S+$/.test(email)) {
-      msg.textContent = 'أدخل بريدًا إلكترونيًا صحيحًا.';
-      return;
-    }
-    if (password.length < 8) {
-      msg.textContent = 'كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل.';
-      return;
-    }
-    if (password !== confirm) {
-      msg.textContent = 'كلمتا المرور غير متطابقتين.';
+    const msg =
+      $('#authMsg');
+
+    const name =
+      $('#authName')
+        .value
+        .trim();
+
+    const phone =
+      $('#authPhone')
+        .value
+        .trim();
+
+    const email =
+      $('#authEmail')
+        .value
+        .trim();
+
+    const password =
+      $('#authPass')
+        .value;
+
+    if (
+      !name ||
+      phone.replace(
+        /\D/g,
+        ''
+      ).length < 8 ||
+      !email ||
+      password.length < 6
+    ) {
+
+      msg.textContent =
+        'أدخل الاسم والرقم والبريد وكلمة مرور 6 أحرف على الأقل.';
+
       return;
     }
 
-    $('#signUp').disabled = true;
-    msg.textContent = 'جاري إنشاء الحساب...';
-    const r = await sb.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: name, phone } }
-    });
-    $('#signUp').disabled = false;
+    const r =
+      await sb.auth.signUp({
+        email,
+        password,
+
+        options: {
+          data: {
+            full_name:
+              name,
+            phone:
+              phone
+          }
+        }
+      });
 
     if (r.error) {
-      msg.textContent = authMessage(r.error);
+
+      msg.textContent =
+        r.error.message;
+
       return;
     }
 
-    msg.textContent = r.data?.session
-      ? 'تم إنشاء الحساب وتسجيل الدخول بنجاح.'
-      : 'تم إنشاء الحساب. تحقق من بريدك الإلكتروني لتفعيل الحساب.';
-  }
-
-  async function forgotPassword() {
-    const msg = $('#authMsg');
-    const email = $('#authEmail').value.trim();
-    if (!/^\S+@\S+\.\S+$/.test(email)) {
-      msg.textContent = 'أدخل بريدك الإلكتروني أولًا ثم اضغط «نسيت كلمة المرور؟».';
-      return;
-    }
-
-    $('#forgotPassword').disabled = true;
-    msg.textContent = 'جاري إرسال رابط استعادة كلمة المرور...';
-    const redirectTo = `${window.location.origin}${window.location.pathname}?reset-password=1`;
-    const r = await sb.auth.resetPasswordForEmail(email, { redirectTo });
-    $('#forgotPassword').disabled = false;
-
-    msg.textContent = r.error
-      ? authMessage(r.error)
-      : 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.';
-  }
-
-  async function updatePassword() {
-    const msg = $('#resetMsg');
-    const password = $('#resetPass').value;
-    const confirm = $('#resetPassConfirm').value;
-
-    if (password.length < 8) {
-      msg.textContent = 'كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل.';
-      return;
-    }
-    if (password !== confirm) {
-      msg.textContent = 'كلمتا المرور غير متطابقتين.';
-      return;
-    }
-
-    $('#updatePassword').disabled = true;
-    msg.textContent = 'جاري حفظ كلمة المرور...';
-    const r = await sb.auth.updateUser({ password });
-    $('#updatePassword').disabled = false;
-
-    if (r.error) {
-      msg.textContent = authMessage(r.error);
-      return;
-    }
-
-    msg.textContent = 'تم تغيير كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول.';
-    $('#resetPass').value = '';
-    $('#resetPassConfirm').value = '';
-    history.replaceState(null, '', `${window.location.pathname}#home`);
-    setTimeout(() => close('resetPasswordModal'), 900);
+    msg.textContent =
+      r.data?.session
+        ? 'تم إنشاء الحساب بنجاح.'
+        : 'تم إنشاء الحساب. تحقق من بريدك الإلكتروني ثم سجّل الدخول.';
   }
 
 async function signOut() {
@@ -1190,17 +1238,16 @@ async function signOut() {
 }
 
 function updateAuth(session) {
+  $('#signIn')?.classList.toggle('hidden', !!session);
+  $('#signUp')?.classList.toggle('hidden', !!session);
   $('#signOut')?.classList.toggle('hidden', !session);
-  $('#myOrders')?.classList.toggle('hidden', !session);
 
   if (session) {
     $('#signupFields')?.classList.add('hidden');
-    $('#confirmPassWrap')?.classList.add('hidden');
-    $('#signIn')?.classList.add('hidden');
-    $('#signUp')?.classList.add('hidden');
-    $('#forgotPassword')?.classList.add('hidden');
+    $('#myOrders')?.classList.remove('hidden');
   } else {
-    setAuthMode('signin');
+    $('#signupFields')?.classList.remove('hidden');
+    $('#myOrders')?.classList.add('hidden');
   }
 }
 
@@ -1235,16 +1282,10 @@ function setup() {
   $('#accountBtn').onclick = () => open('account');
   $('#myOrders').onclick = showMyOrders;
   $('#signIn').onclick = signIn;
+  $('#forgotPassword').onclick = requestPasswordReset;
   $('#signUp').onclick = signUp;
-  $('#authModeToggle').onclick = () => {
-    const isSignUp = !$('#signUp')?.classList.contains('hidden');
-    setAuthMode(isSignUp ? 'signin' : 'signup');
-    $('#authMsg').textContent = '';
-  };
-  $('#forgotPassword').onclick = forgotPassword;
-  $('#updatePassword').onclick = updatePassword;
-
   $('#signOut').onclick = signOut;
+  $('#saveNewPassword').onclick = saveNewPassword;
   $('#contactForm').onsubmit = submitMessage;
 
   document.querySelectorAll('[data-close]').forEach(b => {
@@ -1317,22 +1358,29 @@ function setup() {
   if (sb) {
     sb.auth
       .getSession()
-      .then(({ data }) => updateAuth(data?.session || null));
+      .then(({ data }) => {
+        updateAuth(data?.session || null);
+
+        const hash = window.location.hash || '';
+        if (data?.session && /access_token=|type=recovery/.test(hash)) {
+          open('resetPasswordModal');
+          $('#resetPasswordMsg').textContent = 'اختر كلمة مرور جديدة لحسابك.';
+        }
+      });
 
     sb.auth.onAuthStateChange((event, s) => {
       updateAuth(s);
-      if (event === 'PASSWORD_RECOVERY' || new URLSearchParams(window.location.search).get('reset-password') === '1') {
+
+      if (event === 'PASSWORD_RECOVERY') {
+        close('account');
         open('resetPasswordModal');
+        $('#resetPasswordMsg').textContent = 'اختر كلمة مرور جديدة لحسابك.';
       }
     });
   }
 
   updateCart();
   loadProducts();
-
-  if (new URLSearchParams(window.location.search).get('reset-password') === '1') {
-    setTimeout(() => open('resetPasswordModal'), 250);
-  }
 }
 
 window.NBYN = {
