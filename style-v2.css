@@ -1165,3 +1165,13 @@ footer a{
     animation:none!important;
   }
   }
+
+.textBtn{
+  background:transparent;
+  border:0;
+  color:var(--q);
+  padding:8px 4px;
+  cursor:pointer;
+  text-decoration:underline;
+}
+.textBtn:disabled{opacity:.55;cursor:not-allowed}
